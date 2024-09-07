@@ -51,6 +51,10 @@ def run_loop(args):
        If int: choose the required number of samples at random,
        ensuring that at least half are SN Ia.
        Default is 'original'.
+    -cf: str (optional)
+       Path to optional config file to specify labels for multiclass classification
+       File should contain label names along with numerical representations (comma separated)
+       The number of lines in the file will be used to calculate number of classes
 
     Examples
     --------
@@ -64,6 +68,26 @@ def run_loop(args):
     """
 
     # set training sample variable
+
+    # TODO: add code for reading from config file
+    #       -> grab n_classes parameter for learn_loop()
+    #       -> create dict to map label names to corresponding numerical labels
+    
+    # gets class names from config file and generates dictionary with one-hot encoded numerical labels
+    n_classes = 0
+    class_info = {}
+
+    with open(args.config, "r") as config:
+        info = [line for line in config]
+        for label in info[0].split(','):
+            class_info[label] = n_classes
+            n_classes += 1
+            
+        for num, label in enumerate(class_info.values()):
+            encoded = [0 for _ in range(n_classes)]
+            encoded[label] = 1
+            class_info[list(class_info)[num]] = encoded
+
     if args.training == 'original':
         train = 'original'
     elif isinstance(int(args.training), int):
@@ -73,13 +97,15 @@ def run_loop(args):
                          '"original" or integer!')
 
     # run active learning loop
+
+    # TODO: after implementing nclass > 2, add the nclass parameter here
     learn_loop(nloops=args.nquery, features_method=args.method,
                classifier=args.classifier,
                strategy=args.strategy, path_to_features=args.input,
                output_metrics_file=args.metrics,
                output_queried_file=args.queried,
                training=train, batch=args.batch)
-
+    
 
 def main():
 
@@ -115,6 +141,9 @@ def main():
     parser.add_argument('-t', '--training', dest='training', required=True,
                         help='Initial training sample. Options are '
                              '"original" or integer.', type=str)
+    parser.add_argument('-cf', '--config', dest='config', required=False,
+                        help='File path to config file for specifying labels for multi-class classification',
+                        type=str)
 
     from_user = parser.parse_args()
 

@@ -53,9 +53,7 @@ def run_loop(args):
        Default is 'original'.
     -cf: str (optional)
        Path to optional config file to specify labels for multiclass classification
-       File should contain label names along with numerical representations (comma separated)
-       The number of lines in the file will be used to calculate number of classes
-
+       File should contain all label names (comma separated)
     Examples
     --------
 
@@ -77,16 +75,20 @@ def run_loop(args):
     n_classes = 0
     class_info = {}
 
-    with open(args.config, "r") as config:
-        info = [line for line in config]
-        for label in info[0].split(','):
-            class_info[label] = n_classes
-            n_classes += 1
-            
-        for num, label in enumerate(class_info.values()):
-            encoded = [0 for _ in range(n_classes)]
-            encoded[label] = 1
-            class_info[list(class_info)[num]] = encoded
+    if args.config is not None:
+        with open(args.config, "r") as config:
+            info = [line for line in config]
+            for label in info[0].split(','):
+                class_info[label] = n_classes
+                n_classes += 1
+                
+            for num, label in enumerate(class_info.values()):
+                encoded = [0 for _ in range(n_classes)]
+                encoded[label] = 1
+                class_info[list(class_info)[num]] = encoded
+                
+            print(f'class_info: {class_info}')
+            print(f'n_classes: {n_classes}')
 
     if args.training == 'original':
         train = 'original'

@@ -66,10 +66,6 @@ def run_loop(args):
     """
 
     # set training sample variable
-
-    # TODO: add code for reading from config file
-    #       -> grab n_classes parameter for learn_loop()
-    #       -> create dict to map label names to corresponding numerical labels
     
     # gets class names from config file and generates dictionary with one-hot encoded numerical labels
     n_classes = 0
@@ -78,16 +74,11 @@ def run_loop(args):
     if args.config is not None:
         with open(args.config, "r") as config:
             info = [line for line in config]
-            for label in info[0].split(','):
-                class_info[label] = n_classes
+            for label in info[0].split(';'):
+                class_info[label.split(":")[0]] = label.split(":")[1]
                 n_classes += 1
-                
-            for num, label in enumerate(class_info.values()):
-                encoded = [0 for _ in range(n_classes)]
-                encoded[label] = 1
-                class_info[list(class_info)[num]] = encoded
-                
-            print(f'class_info: {class_info}')
+                    
+            print(f'class_info: {class_info}') # TODO: remove these
             print(f'n_classes: {n_classes}')
 
     if args.training == 'original':

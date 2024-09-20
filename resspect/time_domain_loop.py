@@ -809,7 +809,7 @@ def run_time_domain_active_learning_loop(
         light_curve_train_ids: np.ndarray, canonical_data: DataBase,
         is_separate_files: bool, path_to_features_directory: str,
         fname_pattern: list, survey_name: str,  ia_training_fraction: float,
-        is_save_samples: bool, feature_extraction_method: str='bazin', **kwargs: dict):
+        is_save_samples: bool, feature_extraction_method: str='bazin', retrain_rate=1, **kwargs: dict):
     """
     Runs time domain active learning loop
 
@@ -893,7 +893,7 @@ def run_time_domain_active_learning_loop(
         budgets_dict[epoch] = budgets
     
     for epoch in progressbar.progressbar(
-            range(learning_days[0], learning_days[-1] - 1)):
+            range(learning_days[0], learning_days[-1] - 1, retrain_rate)): # added step size to range() function using retrain_rate parameter
         if light_curve_data.pool_features.shape[0] > 0:
             light_curve_data = _run_classification_and_evaluation(
                 light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
@@ -913,7 +913,7 @@ def run_time_domain_active_learning_loop(
         light_curve_data = process_next_day_loop(
             light_curve_data, next_day_features_file_name, is_separate_files,
             is_queryable, survey_name,  ia_training_fraction, id_key_name,
-            light_curve_train_ids, is_save_samples, canonical_data, strategy,
+            light_curve_train_ids, is_save_samples, canonical_data, strategy,   
             feature_extraction_method=feature_extraction_method)
 
 
@@ -930,6 +930,7 @@ def time_domain_loop(days: list, output_metrics_file: str,
                      sep_files: bool = False, survey: str = 'LSST',
                      initial_training: str = 'original',
                      feature_extraction_method: str = 'bazin',
+                     retrain_rate: int = 1,
                      save_full_query: bool = False, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
@@ -1044,7 +1045,7 @@ def time_domain_loop(days: list, output_metrics_file: str,
         output_queried_file, save_full_query, id_key_name,
         light_curve_train_ids, canonical_data, sep_files, path_to_features_dir,
         fname_pattern, survey, ia_frac, save_samples,
-        feature_extraction_method=feature_extraction_method, **kwargs)
+        feature_extraction_method=feature_extraction_method, retrain_rate=retrain_rate, **kwargs)
 
 def main():
     return None

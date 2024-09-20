@@ -67,7 +67,7 @@ def fit_dataset(user_choices):
     # raw data directory
     data_dir = user_choices.input
     features_file = user_choices.output
-    ncores = user_choices.ncores
+    ncores = user_choices.ncores    
 
     if user_choices.sim_name in ['SNPCC', 'snpcc']:
         # fit the entire sample

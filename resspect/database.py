@@ -567,7 +567,7 @@ class DataBase:
         if sep_files:
             # get samples labels in a separate object
             if self.train_metadata.shape[0] > 0:
-                train_labels = self.train_metadata['type'].values == 'Ia'
+                train_labels = self.train_metadata['type'].values == 'Ia' # TODO: Needs to be changed
                 self.train_labels = train_labels.astype(int)
 
             if self.test_metadata.shape[0] > 0:
@@ -626,7 +626,7 @@ class DataBase:
                 self.queryable_ids = self.pool_metadata[id_name].values
 
             if nclass == 2:
-                train_ia_flag = self.train_metadata['type'].values == 'Ia'
+                train_ia_flag = self.train_metadata['type'].values == 'Ia' # TODO: Needs to be changed
                 self.train_labels = train_ia_flag.astype(int)
 
                 test_ia_flag = self.test_metadata['type'].values == 'Ia'
@@ -637,6 +637,10 @@ class DataBase:
 
                 pool_ia_flag = self.pool_metadata['type'].values == 'Ia'
                 self.pool_labels = pool_ia_flag.astype(int)
+
+            # TODO: Add implementation for nclass > 2
+            elif nclass > 2:
+                pass
 
             else:
                 raise ValueError("Only 'Ia x non-Ia' are implemented! "
@@ -733,7 +737,7 @@ class DataBase:
 
         if sep_files:
             self.train_features = self.train_features[train_flag]
-            test_labels = self.test_metadata['type'].values == 'Ia'
+            test_labels = self.test_metadata['type'].values == 'Ia' # TODO: Needs to change/add a nclass > 2 implementation
             self.test_labels = test_labels.astype(int)
             validation_labels = self.validation_metadata['type'].values == 'Ia'
             self.validation_labels = validation_labels.astype(int)
@@ -751,12 +755,12 @@ class DataBase:
             self.pool_features = self.test_features
             self.validation_features = self.test_features
             self.validation_metadata = self.test_metadata
-            test_label_flag = data_copy['type'][test_flag].values == 'Ia'
+            test_label_flag = data_copy['type'][test_flag].values == 'Ia' # TODO: Needs to change/add a nclass > 2 implementation
             self.test_labels = test_label_flag.astype(int)
             self.pool_labels = self.test_labels
             self.validation_labels = self.test_labels
 
-        train_label_flag = data_copy['type'][train_flag].values == 'Ia'
+        train_label_flag = data_copy['type'][train_flag].values == 'Ia' # TODO: Needs to change/add a nclass > 2 implementation
         self.train_labels = train_label_flag.astype(int)
 
         if queryable and not sep_files:

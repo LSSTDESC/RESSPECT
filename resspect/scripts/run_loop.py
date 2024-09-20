@@ -77,9 +77,6 @@ def run_loop(args):
             for label in info[0].split(';'):
                 class_info[label.split(":")[0]] = label.split(":")[1]
                 n_classes += 1
-                    
-            print(f'class_info: {class_info}') # TODO: remove these
-            print(f'n_classes: {n_classes}')
 
     if args.training == 'original':
         train = 'original'

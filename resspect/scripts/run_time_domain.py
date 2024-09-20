@@ -105,6 +105,8 @@ def run_time_domain(user_choice):
         If int: choose the required number of samples at random,
         ensuring that at least half are SN Ia
         Default is 'original'.
+    -r: int
+        Retrain rate (describes how often to train the model)
 
     Returns
     -------
@@ -151,6 +153,8 @@ def run_time_domain(user_choice):
     path_to_ini_files['validation'] = user_choice.val
     path_to_ini_files['test'] = user_choice.test    
     
+    retrain_rate = user_choice.retrain_rate 
+    
     # run time domain loop
     time_domain_loop(days=days, output_metrics_file=output_metrics_file,
                  output_queried_file=output_query_file, 
@@ -161,7 +165,7 @@ def run_time_domain(user_choice):
                  sep_files=sep_files, budgets=budgets,
                  screen=screen, initial_training=training,
                  survey=survey, queryable=queryable, n_estimators=n_estimators,
-                 canonical=canonical)
+                 canonical=canonical, retrain_rate=retrain_rate)
 
 
 def str2bool(v):
@@ -246,6 +250,8 @@ def main():
     parser.add_argument('-cn', '--canonical', dest='canonical', required=False, default=False,
                         type=str2bool,
                        help='If True this concerns the canonical sample. Default is False.')
+    parser.add_argument('-r', '--retrain', dest='retrain_rate', required=False, default=False,
+                        help='Retrain rate - describes how often to train the model')
     
     from_user = parser.parse_args()
 

@@ -63,6 +63,16 @@ jobs:
         mv output ${{env.ARTIFACTS_DIR}}
       env:
         STEP_URL: ${{steps.jobs.outputs.html_url}}#step:10:1
+    - name: Generate dashboard HTML
+      run: |
+        asv show
+        asv publish
+    - name: Move the readme into the HTML directory.
+      run: |
+        cp ${{github.workspace}}/README.md ${{env.WORKING_DIR}}/_html/README.md
+    - name: LS the directory
+      run: |
+        ls -l ${{env.WORKING_DIR}}/_html/
     - name: Upload artifacts (PR number and benchmarks output)
       uses: actions/upload-artifact@v4
       with:

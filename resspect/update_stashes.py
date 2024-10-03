@@ -15,10 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["update_pool_stash", "update_training_stash"]
+__all__ = ["update_pool_stash", "update_training_stash_with_new_classification", 
+           "update_training_stash_with_new_features", "remove_training_from_pool", 
+           "remove_not_hot_objects"]
 
-### Need to remove old objs at some point (once they are no longer hot)
-# Need to remove objects that have been moved from pool to training
+#Need to make sure we don't get not_hot objects from rob
+#refactor all of this, I'm pretty sure it's going to take ages to run - SQL database?
+
 def update_pool_stash(current_stash_path: str, new_night_path: str):
     #should we store old features somewhere? makes it easier to add training objs
     #would want to add current MJD, maybe first MJD, and peak MJD

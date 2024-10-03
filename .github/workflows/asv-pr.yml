@@ -70,11 +70,17 @@ jobs:
     - name: Move the readme into the HTML directory.
       run: |
         cp ${{github.workspace}}/README.md ${{env.WORKING_DIR}}/_html/README.md
-    - name: LS the directory
+    - name: LS the directories 1
       run: |
-        ls -l ${{env.WORKING_DIR}}/_html/
-    - name: Upload artifacts (PR number and benchmarks output)
-      uses: actions/upload-artifact@v4
+        ls -l ${{env.WORKING_DIR}}/_html/ 
+    - name: LS the directories 2
+      run: |
+        ls -l ${{env.WORKING_DIR}}
+    - name: LS the directories 3
+      run: |
+        ls -l ${{github.workspace}}
+    - name: Deploy to Github pages
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
-        name: benchmark-artifacts
-        path: ${{env.ARTIFACTS_DIR}}
+        branch: gh-pages
+        folder: ${{env.WORKING_DIR}}/_html

@@ -15,7 +15,7 @@
         "warmup_time": -1
     },
     "benchmarks.time_learn_loop": {
-        "code": "def time_learn_loop(ml_model, strategy):\n    \"\"\"Benchmark how long it takes for a run of the learning loop.\"\"\"\n    # Use the precomputed features so we don't time their creation.\n    features_file = str(_TEST_DATA_DIR / \"test_features.csv\")\n    with tempfile.TemporaryDirectory() as dir_name:\n        metrics_file = str(Path(dir_name) / \"metrics.csv\")\n        output_queried_file = str(Path(dir_name) / \"queried.csv\")\n        learn_loop(\n            nloops=25,\n            features_method=\"malanchev\",\n            classifier=ml_model,\n            strategy=strategy,\n            path_to_features=features_file,\n            output_metrics_file=metrics_file,\n            output_queried_file=output_queried_file,\n            training=\"original\",\n            batch=1,\n        )",
+        "code": "def time_learn_loop(ml_model, strategy):\n    \"\"\"Benchmark how long it takes for a run of the learning loop.\"\"\"\n    # Use the precomputed features so we don't time their creation.\n    features_file = str(_TEST_DATA_DIR / \"test_features.csv\")\n    with tempfile.TemporaryDirectory() as dir_name:\n        metrics_file = str(Path(dir_name) / \"metrics.csv\")\n        output_queried_file = str(Path(dir_name) / \"queried.csv\")\n        learn_loop(\n            LoopConfiguration(\n                nloops=25,\n                features_method=\"malanchev\",\n                classifier=ml_model,\n                strategy=strategy,\n                path_to_features=features_file,\n                output_metrics_file=metrics_file,\n                output_queried_file=output_queried_file,\n                training=\"original\",\n                batch=1,\n            )\n        )",
         "min_run_count": 2,
         "name": "benchmarks.time_learn_loop",
         "number": 0,
@@ -38,7 +38,7 @@
         "sample_time": 0.01,
         "type": "time",
         "unit": "seconds",
-        "version": "4fa536bd7bb3cb3aeb5159faece4338a2bb48c050536588bbafc1d6f6cbc485b",
+        "version": "144671bba6ade43fa4a7abc9b5c4c5d8add5fd9c0e53513f26ef01b144ef1b92",
         "warmup_time": -1
     },
     "version": 2

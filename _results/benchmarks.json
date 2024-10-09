@@ -1,4 +1,20 @@
 {
+    "benchmarks.peakmem_learn_loop": {
+        "code": "def peakmem_learn_loop(ml_model):\n    \"\"\"Benchmark how much memory it takes for a run of the learning loop.\"\"\"\n    # Use the precomputed features so we don't time their creation.\n    features_file = str(_TEST_DATA_DIR / \"test_features.csv\")\n    with tempfile.TemporaryDirectory() as dir_name:\n        metrics_file = str(Path(dir_name) / \"metrics.csv\")\n        output_queried_file = str(Path(dir_name) / \"queried.csv\")\n        learn_loop(\n            nloops=25,\n            features_method=\"malanchev\",\n            classifier=ml_model,\n            strategy=\"RandomSampling\",\n            path_to_features=features_file,\n            output_metrics_file=metrics_file,\n            output_queried_file=output_queried_file,\n            training=\"original\",\n            batch=1,\n        )",
+        "name": "benchmarks.peakmem_learn_loop",
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "'RandomForest'",
+                "'KNN'"
+            ]
+        ],
+        "type": "peakmemory",
+        "unit": "bytes",
+        "version": "eed0ed00ffd1c3af799f0e877d272460c808a5dc4132deb17dd64a7dedd9a7a2"
+    },
     "benchmarks.time_feature_creation": {
         "code": "def time_feature_creation():\n    \"\"\"Benchmark how long it takes to read the example files and generate features.\"\"\"\n    input_file_path = _TEST_DATA_DIR / \"DES_data\"\n    with tempfile.TemporaryDirectory() as dir_name:\n        features_file = Path(dir_name) / \"Malanchev.csv\"\n        fit_snpcc(\n            path_to_data_dir=input_file_path,\n            features_file=str(features_file),\n            feature_extractor=\"malanchev\"\n        )",
         "min_run_count": 2,

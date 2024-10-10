@@ -334,7 +334,7 @@ def _update_initial_train_meta_data_header(
 
 def _run_classification_and_evaluation(
         database_class: DataBase, classifier: str,
-        is_classifier_bootstrap: bool, **kwargs: dict) -> DataBase:
+        is_classifier_bootstrap: bool, retrain: bool = True, metric_label: str = 'snpcc', **kwargs: dict) -> DataBase:
     """
     Runs active learning classification and evaluation methods
 
@@ -355,8 +355,8 @@ def _run_classification_and_evaluation(
     if is_classifier_bootstrap:
         database_class.classify_bootstrap(method=classifier, **kwargs)
     else:
-        database_class.classify(method=classifier, **kwargs)
-    database_class.evaluate_classification()
+        database_class.classify(method=classifier, retrain=retrain,**kwargs)
+    database_class.evaluate_classification(metric_label=metric_label)
     
     return database_class
 
@@ -908,10 +908,14 @@ def run_time_domain_active_learning_loop(
         budgets_dict[epoch] = budgets
     
     for epoch in progressbar.progressbar(
-            range(learning_days[0], learning_days[-1] - 1, retrain_rate)): # added step size to range() function using retrain_rate parameter
+            range(learning_days[0], learning_days[-1] - 1)): # added step size to range() function using retrain_rate parameter
         if light_curve_data.pool_features.shape[0] > 0:
-            light_curve_data = _run_classification_and_evaluation(
-                light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
+            if epoch % retrain_rate == 0:
+                light_curve_data = _run_classification_and_evaluation(
+                    light_curve_data, classifier, is_classifier_bootstrap, retrain=True, **kwargs)
+            else:
+                light_curve_data = _run_classification_and_evaluation(
+                    light_curve_data, classifier, is_classifier_bootstrap, retrain=False, **kwargs)
             if light_curve_data.queryable_ids.shape[0] > 0:
                 object_indices = _get_indices_of_objects_to_be_queried(
                     light_curve_data, strategy, budgets_dict[epoch], is_queryable,

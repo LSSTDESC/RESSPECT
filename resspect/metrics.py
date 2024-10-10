@@ -15,7 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pandas as pd
+from sklearn import metrics
+from resspect.classifiers import ORACLE
 
 
 __all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
@@ -128,6 +131,18 @@ def accuracy(label_pred: list, label_true: list):
 
     return cc / len(label_pred)
 
+def get_oracle_metrics(label_pred: list, label_true: list, clf_object: ORACLE):
+    clf_object.sort_nodes_and_generate_labels(label_pred=label_pred, label_true=label_true) 
+    
+    cms = []
+    results = []
+    
+    for pred, true in zip(label_pred, label_true):
+        # iterates through predictions for individual depths
+        cms.append(np.round(metrics.confusion_matrix(true, pred)))        
+        results.append(metrics.precision_recall_fscore_support(true, pred, average=None))
+    
+    return results
 
 def get_snpcc_metric(label_pred: list, label_true: list, ia_flag=1,
                      wpenalty=3):

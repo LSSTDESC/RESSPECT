@@ -26,7 +26,7 @@ from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
-from resspect.metrics import get_snpcc_metric
+from resspect.metrics import get_snpcc_metric, get_oracle_metrics
 
 
 __all__ = ['DataBase']
@@ -918,7 +918,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None, screen=False, **kwargs):
+                 loop=None, screen=False, retrain=True, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -953,28 +953,37 @@ class DataBase:
         if method == 'RandomForest':
             self.predicted_class,  self.classprob, self.classifier = \
                    random_forest(self.train_features, self.train_labels,
-                                 self.pool_features, **kwargs)
+                                 self.pool_features, retrain, self.classifier, **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class,  self.classprob, self.classifier = \
                 gradient_boosted_trees(self.train_features, self.train_labels,
-                                       self.pool_features, **kwargs)
+                                       self.pool_features, retrain, self.classifier, **kwargs)
         elif method == 'KNN':
             self.predicted_class,  self.classprob, self.classifier = \
                 knn(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
+                               self.pool_features, retrain, self.classifier, **kwargs)
         elif method == 'MLP':
             self.predicted_class,  self.classprob, self.classifier = \
                 mlp(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
+                               self.pool_features, retrain, self.classifier, **kwargs)
         elif method == 'SVM':
             self.predicted_class, self.classprob, self.classifier = \
                 svm(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
+                               self.pool_features, retrain, self.classifier, **kwargs)
         elif method == 'NB':
             self.predicted_class, self.classprob, self.classifier = \
                 nbg(self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
+                          self.pool_features, retrain, self.classifier, **kwargs)
+                
+        elif method == "ORACLE":
+            if retrain == True:
+                # call method for training model
+                pass 
+            
+            # call method for getting model predictions
+            pass 
+        
         else:
             raise ValueError("The only classifiers implemented are" +
                               "'RandomForest', 'GradientBoostedTrees'," +
@@ -1189,7 +1198,7 @@ class DataBase:
         Parameters
         ----------
         metric_label: str (optional)
-            Choice of metric. Currenlty only `snpcc` is accepted.
+            Choice of metric. Currenlty only `snpcc` and `oracle` are accepted.
         screen: bool (optional)
             If True, display debug comments on screen.
             Default is False.
@@ -1199,6 +1208,11 @@ class DataBase:
             self.metrics_list_names, self.metrics_list_values = \
                 get_snpcc_metric(list(self.validation_class),
                                  list(self.validation_labels))
+        elif metric_label == 'oracle':
+            self.metrics_list_names, self.metrics_list_values = \
+                get_oracle_metrics(list(self.validation_class),
+                                   list(self.validation_labels),
+                                   self.classifier)
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
@@ -1684,6 +1698,10 @@ class DataBase:
 
 def main():
     return None
+
+def test_oracle():
+    database_class = DataBase()
+    database_class.classify(method='ORACLE', retrain=False)
 
 
 if __name__ == '__main__':

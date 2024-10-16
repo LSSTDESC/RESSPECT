@@ -41,29 +41,15 @@ CLASSIFIER_REGISTRY = {}
 class ResspectClassifer():
     """Base class that all built-in RESSPECT classifiers will inherit from."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
+    def __init__(self, **kwargs):
         """Base initializer for all RESSPECT classifiers.
 
         Parameters
         ----------
-        train_features : array-like
-            _description_
-        train_labels : array-like
-            _description_
-        test_features : array-like
-            _description_
+        kwargs : dict
+            All keyword arguments required by the classifier.
         """
-        self.train_features = train_features
-        self.train_labels = train_labels
-        self.test_features = test_features
         self.kwargs = kwargs
-
-        #! Rename this after answering "Is shape[0] the number of objects or number of features/object?""
-        self.num_test_data = self.test_features.shape[0]
-        self._n_ensembles = 10
-        self.n_labels = np.unique(self.train_labels).size
-        self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
-
         self.classifier = None
 
     def __init_subclass__(cls):
@@ -73,27 +59,54 @@ class ResspectClassifer():
 
         CLASSIFIER_REGISTRY[cls.__name__] = cls
 
-    @property
-    def n_ensembles(self):
-        return self._n_ensembles
-
-    @n_ensembles.setter
-    def n_ensembles(self, value):
-        self._n_ensembles = value
-        self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
-
-    def __call__(self):
-        """Allows the user to call the class instance as a function.
-        e.g. clf = SomeClassifier()
-             predictions, _, _ = clf()
-        """
-        return self.predict(self.train_features, self.train_labels, self.test_features)
-
-    def predict(self, train_features, train_labels, test_features):
-        """Train and predict using the classifier.
+    def load_classifier(self, pretrained_classifier):
+        """Load a pretrained classifier.
 
         Parameters
         ----------
+        pretrained_classifier : object
+            A pretrained classifier instance.
+        """
+        self.classifier = pretrained_classifier
+
+    def fit(self, train_features, train_labels):
+        """Fit the classifier to the training data.
+
+        Parameters
+        ----------
+        train_features : array-like
+            The features used for training, [n_samples, m_features].
+        train_labels : array-like
+            The training labels, [n_samples].
+        """
+        self.classifier.fit(train_features, train_labels)
+
+    def predict(self, test_features):
+        """Predict using a trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        tuple(predictions, prob, classifier_instance)
+            The classes and probabilities for the test sample.
+        """
+        predictions = self.classifier.predict(test_features)
+        prob = self.classifier.predict_proba(test_features)
+
+        return predictions, prob
+
+    def bootstrap(self, n_ensembles, train_features, train_labels, test_features):
+        """Create an ensemble of predictions by resampling the provided training
+        data. Define the ensemble size by specifying the value for `n_ensembles`.
+
+        Parameters
+        ----------
+        n_ensembles : int
+            The number of classifiers in the ensemble.
         train_features : array-like
             The features used for training, [n_samples, m_features].
         train_labels : array-like
@@ -103,68 +116,37 @@ class ResspectClassifer():
 
         Returns
         -------
-        tuple(predictions, prob, classifier_instance)
-            The classes and probabilities for the test sample.
-        """
-        self.classifier.fit(train_features, train_labels)
-        predictions = self.classifier.predict(test_features)
-        prob = self.classifier.predict_proba(test_features)
-
-        return predictions, prob, self.classifier
-
-    def bootstrap(self):
-        """Convenience method that can be overridden by subclasses. Calls the
-        bootstrap_ensemble method with the predict method as an argument.
-
-        Returns
-        -------
         tuple(predictions, prob, ensemble_probs, ensemble_clf)
             The classes and probabilities for the test sample.
         """
-        return self.bootstrap_ensemble(self.predict)
 
-    def bootstrap_ensemble(self, clf_function):
-        """Create an ensemble of predictions by resampling the training data used
-        to instantiate the classifier. Define the ensemble size by specifying the
-        value for `n_ensembles`.
+        # Create an array to store the probability output of each member of the ensemble
+        n_test_data = test_features.shape[0]
+        n_labels = np.unique(train_labels).size
+        ensemble_probs = np.zeros(shape=(n_test_data, n_ensembles, n_labels))
 
-        e.g.:
-        ```
-        clf = SomeClassifier()
-        clf.n_ensembles = 10
-        clf.bootstrap_ensemble(clf.predict)
-        ```
-
-        Parameters
-        ----------
-        clf_function : Callable
-            The function used to and predict with the classifier.
-
-        Returns
-        -------
-        tuple(predictions, prob, ensemble_probs, ensemble_clf)
-            The classes and probabilities for the test sample.
-        """
         classifier_list = list()
         for i in range(self.n_ensembles):
-            x_train, y_train = resample(self.train_features, self.train_labels)
-            _, class_prob, clf = clf_function(x_train, y_train, self.test_features)
+            x_train, y_train = resample(train_features, train_labels)
 
-            classifier_list.append((str(i), clf))
-            self.ensemble_probs[:, i, :] = class_prob
+            self.fit(x_train, y_train)
+            _, class_prob = self.predict(test_features)
+
+            classifier_list.append((str(i), self.classifier))
+            ensemble_probs[:, i, :] = class_prob
 
         ensemble_clf = PreFitVotingClassifier(classifier_list)
-        class_prob = self.ensemble_probs.mean(axis=1)
+        class_prob = ensemble_probs.mean(axis=1)
         predictions = np.argmax(class_prob, axis=1)
 
-        return predictions, class_prob, self.ensemble_probs, ensemble_clf
+        return predictions, class_prob, ensemble_probs, ensemble_clf
 
 
 class RandomForest(ResspectClassifer):
     """RESSPECT-specific version of the sklearn RandomForestClassifier."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
-        super().__init__(train_features, train_labels, test_features, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.n_estimators = kwargs.get('n_estimators', 100)
         self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
@@ -173,8 +155,8 @@ class RandomForest(ResspectClassifer):
 class KNN(ResspectClassifer):
     """RESSPECT-specific version of the sklearn KNeighborsClassifier."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
-        super().__init__(train_features, train_labels, test_features, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.classifier = KNeighborsClassifier(**self.kwargs)
 
@@ -182,8 +164,8 @@ class KNN(ResspectClassifer):
 class MLP(ResspectClassifer):
     """RESSPECT-specific version of the sklearn MLPClassifier."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
-        super().__init__(train_features, train_labels, test_features, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.classifier = MLPClassifier(**self.kwargs)
 
@@ -191,8 +173,8 @@ class MLP(ResspectClassifer):
 class SVM(ResspectClassifer):
     """RESSPECT-specific version of the sklearn SVC."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
-        super().__init__(train_features, train_labels, test_features, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.probability = kwargs.get('probability', True)
         self.classifier = SVC(probability=self.probability, **self.kwargs)
@@ -201,8 +183,8 @@ class SVM(ResspectClassifer):
 class NBG(ResspectClassifer):
     """RESSPECT-specific version of the sklearn GaussianNB."""
 
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
-        super().__init__(train_features, train_labels, test_features, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.classifier = GaussianNB(**self.kwargs)
 

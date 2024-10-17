@@ -1007,25 +1007,20 @@ class DataBase:
         if clf_class is None:
             raise ValueError(f'Classifier, {method} not recognized!')
 
-        clf_instance = clf_class(**kwargs)
-
         # Fit an ensemble of classifiers and predict with all of them
         self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            clf_instance.bootstrap(
+            bootstrap_clf(
+                clf_class,
                 n_ensembles,
                 self.train_features,
                 self.train_labels,
                 self.pool_features
             )
 
-        #! This probably won't work correctly for non-sklearn classifiers
-        #! See issue #50 https://github.com/LSSTDESC/RESSPECT/issues/50
         self.validation_class = \
             self.classifier.predict(self.validation_features)
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
-
-        
 
         if save_predictions:
             id_name = self.identify_keywords()

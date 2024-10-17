@@ -821,7 +821,7 @@ def run_time_domain_active_learning_loop(
     -------
 
     """
-    learning_days = [int(each_day) for each_day in learning_days]
+    learning_days = [int(each_day) for each_day in config.days]
     
     # create dictionary with budgets
     if config.budgets is not None and len(config.budgets) not in [2, len(np.arange(config.days[0], config.days[1]))]:

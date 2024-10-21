@@ -77,7 +77,8 @@ class ResspectClassifier():
         if not Path(pretrained_classifier_filepath).is_file():
             raise FileNotFoundError(f"File {pretrained_classifier_filepath} not found.")
 
-        self.classifier = pickle.load(pretrained_classifier_filepath)
+        with open(pretrained_classifier_filepath, 'rb') as f:
+            self.classifier = pickle.load(f)
 
     def fit(self, train_features, train_labels):
         """Fit the classifier to the training data.

@@ -28,22 +28,16 @@ import numpy as np
 import pandas as pd
 import progressbar
 
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
-from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+from resspect.plugin_utils import fetch_feature_extractor_class
 
 
 FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "bazin": BAZIN_HEADERS
-}
-
-FEATURE_EXTRACTOR_MAPPING = {
-    "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor
+    "Bazin": BAZIN_HEADERS
 }
 
 
@@ -263,7 +257,8 @@ class PLAsTiCCPhotometry:
         sample: str (optional)
             Sample to load, 'train' or 'test'. Default is 'test'.
         """
-        light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        light_curve_data = feature_extractor_class()
         if sample == 'test':
             file_name = os.path.join(
                     raw_data_dir, self._file_list_dict['test'][volume - 1])
@@ -303,7 +298,9 @@ class PLAsTiCCPhotometry:
         feature_method
             Feature extraction method, only possibility is 'Bazin'.
         """
-        if feature_extractor not in FEATURE_EXTRACTOR_MAPPING:
+        try:
+            fetch_feature_extractor_class(feature_extractor)
+        except ValueError:
             raise ValueError(
                 'Provided feature extractor method has not been implemented!!')
 

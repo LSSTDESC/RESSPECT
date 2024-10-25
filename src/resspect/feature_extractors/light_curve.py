@@ -34,8 +34,9 @@ from resspect.lightcurves_utils import get_snpcc_sntype
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ['LightCurve']
+__all__ = ['LightCurve', 'FEATURE_EXTRACTOR_REGISTRY']
 
+FEATURE_EXTRACTOR_REGISTRY = {}
 
 class LightCurve:
     """ Light Curve object, holding meta and photometric data.
@@ -120,6 +121,13 @@ class LightCurve:
         self.sim_pkmjd = None
         self.sncode = 0
         self.sntype = ' '
+
+    def __init_subclass__(cls):
+        """Register all subclasses of LightCurve in the FEATURE_EXTRACTOR_REGISTRY."""
+        if cls.__name__ in FEATURE_EXTRACTOR_REGISTRY:
+            raise ValueError(f"Duplicate feature extractor name: {cls.__name__}")
+
+        FEATURE_EXTRACTOR_REGISTRY[cls.__name__] = cls
 
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,

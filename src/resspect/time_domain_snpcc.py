@@ -20,30 +20,21 @@ import multiprocessing
 import os
 from itertools import repeat
 
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
-from resspect.feature_extractors.bump import BumpFeatureExtractor
-from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
 from resspect.lightcurves_utils import MALANCHEV_HEADERS
 from resspect.lightcurves_utils import get_files_list
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
+from resspect.plugin_utils import fetch_feature_extractor_class
 
 logging.basicConfig(level=logging.INFO)
 
 __all__ = ['SNPCCPhotometry']
 
 
-FEATURE_EXTRACTOR_MAPPING = {
-    "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor,
-    "malanchev": MalanchevFeatureExtractor
-}
-
-
 FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "bazin": BAZIN_HEADERS,
-    "malanchev": MALANCHEV_HEADERS
+    "Bazin": BAZIN_HEADERS,
+    "Malanchev": MALANCHEV_HEADERS
 }
 
 
@@ -369,7 +360,8 @@ class SNPCCPhotometry:
         feature_extractor: str
             Feature extraction method
         """
-        light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        light_curve_data = feature_extractor_class()
         light_curve_data.load_snpcc_lc(
             os.path.join(raw_data_dir, file_name))
         light_curve_data = self._process_each_light_curve(

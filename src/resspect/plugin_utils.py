@@ -1,5 +1,6 @@
 import importlib
 from resspect.classifiers import CLASSIFIER_REGISTRY
+from resspect.feature_extractors.light_curve import LightCurve, FEATURE_EXTRACTOR_REGISTRY
 
 def get_or_load_class(class_name: str, registry: dict) -> type:
     """Given the name of a class and a registry dictionary, attempt to return
@@ -114,3 +115,28 @@ def fetch_classifier_class(classifier_name: str) -> type:
         raise ValueError(f"Error fetching class: {classifier_name}") from exc
 
     return clf_class
+
+
+def fetch_feature_extractor_class(feature_extractor_name: str) -> LightCurve:
+    """Fetch the feature extractor class from the registry.
+
+    Parameters
+    ----------
+    feature_extract_name : str
+        The name of the feature extractor class to retrieve. This should either be the
+    name of the class or the import specification for the class.
+
+    Returns
+    -------
+    LightCurve
+        The subclass of QueryStrategy.
+
+    Raises
+    ------
+    ValueError
+        If a built-in query strategy was requested, but not found in the registry.
+    ValueError
+        If no query strategy was specified in the runtime configuration.
+    """
+
+    return get_or_load_class(feature_extractor_name, FEATURE_EXTRACTOR_REGISTRY)

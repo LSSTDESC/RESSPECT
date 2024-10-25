@@ -330,7 +330,7 @@ def get_meta_data_from_features(path_to_features: str,
 def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
                           output_canonical_file: str, output_info_file='',
                           compute=True, save=True, input_info_file='',
-                          features_method='bazin', screen=False,
+                          features_method='Bazin', screen=False,
                           number_of_neighbors=1):
     """Build canonical sample for SNPCC data.
 

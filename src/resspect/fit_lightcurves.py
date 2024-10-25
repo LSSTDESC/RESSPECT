@@ -379,7 +379,7 @@ def fit(data_dic: list, output_features_file: str,
                 each entry contains a list of mjd, band, flux, fluxerr for 
                 each observation
             'redshift'
-                redshif of the object if known, 'unknown' otherwise
+                redshift of the object if known, 'unknown' otherwise
             'sncode'
                 number to delineate what type of transient the object is. 
                 one_code will translate this into '1'/'0' for positive/negative

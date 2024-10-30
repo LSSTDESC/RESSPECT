@@ -27,7 +27,7 @@ from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
-
+from resspect.plugin_utils import fetch_classifier_class, fetch_query_strategy_class
 
 __all__ = ['DataBase']
 
@@ -914,7 +914,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None, screen=False, **kwargs):
+                 loop=None, screen=False, pretrained_model_path=None, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -936,6 +936,8 @@ class DataBase:
         pred_dir: str (optional)
             Output directory to store class predictions.
             Only used if `save_predictions == True`. Default is None.
+        pretrained_model_path: str (optional)
+            Path to a pretrained model. Default is None.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -946,43 +948,24 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        if method == 'RandomForest':
-            self.predicted_class,  self.classprob, self.classifier = \
-                   random_forest(self.train_features, self.train_labels,
-                                 self.pool_features, **kwargs)
-        elif method == 'GradientBoostedTrees':
-            raise ValueError("GradientBoostedTrees is currently unimplemented.")
-            # TODO: Restore once GradientBoostedTrees is fixed.
-            # self.predicted_class,  self.classprob, self.classifier = \
-            #     gradient_boosted_trees(self.train_features, self.train_labels,
-            #                            self.pool_features, **kwargs)
-        elif method == 'KNN':
-            self.predicted_class,  self.classprob, self.classifier = \
-                knn(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'MLP':
-            self.predicted_class,  self.classprob, self.classifier = \
-                mlp(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'SVM':
-            self.predicted_class, self.classprob, self.classifier = \
-                svm(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'NB':
-            self.predicted_class, self.classprob, self.classifier = \
-                nbg(self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
+        clf_class = fetch_classifier_class(method)
+        if clf_class is None:
+            raise ValueError(f'Classifier, {method} not recognized!')
+
+        clf_instance = clf_class(**kwargs)
+
+        # if a pretrained model is available, load it, otherwise fit the model
+        if pretrained_model_path is not None:
+            clf_instance.load(pretrained_model_path)
         else:
-            raise ValueError(
-                "The only classifiers implemented are 'RandomForest', 'KNN', 'MLP', "
-                "'SVM' and 'NB'.\nFeel free to add other options."
-            )
+            clf_instance.fit(self.train_features, self.train_labels)
+
+        # estimate classification for pool sample
+        self.classprob = clf_instance.predict_probabilities(self.pool_features)
 
         # estimate classification for validation sample
-        self.validation_class = \
-            self.classifier.predict(self.validation_features)
-        self.validation_prob = \
-            self.classifier.predict_proba(self.validation_features)
+        self.validation_class = clf_instance.predict_class(self.validation_features)
+        self.validation_prob = clf_instance.predict_probabilities(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1028,46 +1011,24 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        if method == 'RandomForest':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(random_forest, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
+        clf_class = fetch_classifier_class(method)
+        if clf_class is None:
+            raise ValueError(f'Classifier, {method} not recognized!')
 
-        elif method == 'GradientBoostedTrees':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(gradient_boosted_trees, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'KNN':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(knn, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'MLP':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(mlp, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'SVM':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(svm, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'NB':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(nbg, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        else:
-            raise ValueError('Classifier not recognized!')
+        # Fit an ensemble of classifiers and predict with all of them
+        self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(
+                clf_class,
+                n_ensembles,
+                self.train_features,
+                self.train_labels,
+                self.pool_features
+            )
 
         self.validation_class = \
             self.classifier.predict(self.validation_features)
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
-
-        
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1304,7 +1265,7 @@ class DataBase:
         return query_indx
 
     def make_query(self, strategy='UncSampling', batch=1,
-                   screen=False, queryable=False, query_thre=1.0) -> list:
+                   screen=False, queryable=False, query_threshold=1.0) -> list:
         """Identify new object to be added to the training sample.
 
         Parameters
@@ -1321,7 +1282,7 @@ class DataBase:
         queryable: bool (optional)
             If True, consider only queryable objects.
             Default is False.
-        query_thre: float (optional)
+        query_threshold: float (optional)
             Percentile threshold where a query is considered worth it.
             Default is 1 (no limit).
         screen: bool (optional)
@@ -1344,57 +1305,24 @@ class DataBase:
 
         id_name = self.identify_keywords()
 
-        if strategy == 'UncSampling':
-            query_indx = uncertainty_sampling(class_prob=self.classprob,
-                                              queryable_ids=self.queryable_ids,
-                                              test_ids=self.pool_metadata[id_name].values,
-                                              batch=batch, screen=screen,
-                                              query_thre=query_thre)
+        # retrieve and instantiate the query strategy class
+        query_strategy_class = fetch_query_strategy_class(strategy)
+        query_strategy = query_strategy_class(
+            queryable_ids=self.queryable_ids,
+            test_ids=self.pool_metadata[id_name].values,
+            batch=batch,
+            screen=screen,
+            query_threshold=query_threshold,
+            queryable=queryable
+        )
 
+        # Use the `requires_ensemble` flag to determine which probabilities to use
+        input_probabilities = self.classprob
+        if query_strategy.requires_ensemble:
+            input_probabilities = self.ensemble_probs
 
-        elif strategy == 'UncSamplingEntropy':
-            query_indx = uncertainty_sampling_entropy(class_prob=self.classprob,
-                                              queryable_ids=self.queryable_ids,
-                                              test_ids=self.pool_metadata[id_name].values,
-                                              batch=batch, screen=screen,
-                                              query_thre=query_thre)
-
-        elif strategy == 'UncSamplingLeastConfident':
-            query_indx = uncertainty_sampling_least_confident(class_prob=self.classprob,
-                                              queryable_ids=self.queryable_ids,
-                                              test_ids=self.pool_metadata[id_name].values,
-                                              batch=batch, screen=screen,
-                                              query_thre=query_thre)
-
-        elif strategy == 'UncSamplingMargin':
-            query_indx = uncertainty_sampling_margin(class_prob=self.classprob,
-                                              queryable_ids=self.queryable_ids,
-                                              test_ids=self.pool_metadata[id_name].values,
-                                              batch=batch, screen=screen,
-                                              query_thre=query_thre)
-            return query_indx
-        elif strategy == 'QBDMI':
-            query_indx = qbd_mi(ensemble_probs=self.ensemble_probs,
-                                queryable_ids=self.queryable_ids,
-                                test_ids=self.pool_metadata[id_name].values,
-                                batch=batch, screen=screen,
-                                query_thre=query_thre)
-
-        elif strategy =='QBDEntropy':
-            query_indx = qbd_entropy(ensemble_probs=self.ensemble_probs,
-                                    queryable_ids=self.queryable_ids,
-                                    test_ids=self.pool_metadata[id_name].values,
-                                    batch=batch, screen=screen,
-                                    query_thre=query_thre)
-
-        elif strategy == 'RandomSampling':
-            query_indx = random_sampling(queryable_ids=self.queryable_ids,
-                                         test_ids=self.pool_metadata[id_name].values,
-                                         queryable=queryable, batch=batch,
-                                         query_thre=query_thre, screen=screen)
-
-        else:
-            raise ValueError('Invalid strategy.')
+        # get the query index from the strategy
+        query_indx = query_strategy.sample(input_probabilities)
 
         if screen:
             print('       ... queried obj id: ', self.pool_metadata[id_name].values[query_indx[0]])

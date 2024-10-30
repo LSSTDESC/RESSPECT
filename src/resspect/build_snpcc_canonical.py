@@ -319,7 +319,7 @@ def get_meta_data_from_features(path_to_features: str,
     path_to_features: str
         Complete path to Bazin features files
     features_method: str (optional)
-        Method for feature extraction. Only 'bazin' is implemented.
+        Method for feature extraction.
     """
     data = DataBase()
     data.load_features(path_to_file=path_to_features, feature_extractor=features_method,

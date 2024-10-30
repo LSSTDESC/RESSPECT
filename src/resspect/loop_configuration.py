@@ -24,7 +24,7 @@ class LoopConfiguration:
     output_queried_file: str
         Full path to output file to store the queried sample.
     features_method: str (optional)
-        Feature extraction method. Currently only 'Bazin' and 'Bump' are implemented.
+        Feature extraction method. Currently only 'Bazin', 'Bump', and 'Malanchev' are implemented.
     classifier: str (optional)
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',

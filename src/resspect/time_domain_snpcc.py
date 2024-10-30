@@ -83,7 +83,7 @@ class SNPCCPhotometry:
         self._kwargs = None  # type: dict
 
     def create_daily_file(self, output_dir: str,
-                          day: int, feature_extractor: str = 'bazin',
+                          day: int, feature_extractor: str = 'Bazin',
                           get_cost: bool = False):
         """
         Create one file for a given day of the survey.
@@ -100,7 +100,7 @@ class SNPCCPhotometry:
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.
         feature_extractor: str
-            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
+            Feature extraction method, only possibilities are 'Bazin' and 'Malanchev'.
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
@@ -147,7 +147,7 @@ class SNPCCPhotometry:
         day_of_survey: int
             Day since the beginning of survey.
         feature_extractor: str
-            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
+            Feature extraction method, only possibilities are 'Bazin' and 'Malanchev'.
         get_cost: bool
            if True, cost of taking a spectra is computed.
         """
@@ -166,13 +166,13 @@ class SNPCCPhotometry:
         dataset_name: str
             name of the dataset used
         feature_extractor: str
-            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
+            Feature extraction method, only possibilities are 'Bazin' and 'Malanchev'.
         """
         if dataset_name != 'SNPCC':
             raise ValueError('This class supports only SNPCC dataset!')
         # TODO: Update when bump headers are available
-        if feature_extractor != 'bazin' and feature_extractor!='malanchev':
-            raise ValueError('Only bazin and malanchev features are implemented!!')
+        if feature_extractor != 'Bazin' and feature_extractor!='Malanchev':
+            raise ValueError('Only Bazin and Malanchev features are implemented!!')
 
     def _check_queryable(self, light_curve_data,
                          queryable_criteria: int,
@@ -371,7 +371,7 @@ class SNPCCPhotometry:
 
     # TODO: Too many arguments. Refactor and update docs
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
-                        time_domain_dir: str, feature_extractor: str = 'bazin',
+                        time_domain_dir: str, feature_extractor: str = 'Bazin',
                         dataset: str = 'SNPCC', days_since_obs: int = 2,
                         queryable_criteria: int = 1, get_cost: bool = False,
                         tel_sizes: list = [4, 8],
@@ -380,7 +380,7 @@ class SNPCCPhotometry:
         """
         Fit features for all objects with enough points in a given day.
 
-        Generate 1 file containing best-fit Bazin or malanchev parameters for a given
+        Generate 1 file containing best-fit Bazin or Malanchev parameters for a given
         day of the survey.
 
         Parameters
@@ -400,7 +400,7 @@ class SNPCCPhotometry:
             Only used if "queryable_criteria == 2". Default is 2.
         feature_extractor: str (optional)
             Feature extraction method.
-            Only possibilities are 'Bazin' or 'malanchev'.
+            Only possibilities are 'Bazin' or 'Malanchev'.
         get_cost: bool (optional)
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.

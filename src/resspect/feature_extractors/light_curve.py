@@ -90,8 +90,6 @@ class LightCurve:
         Check if this light can be queried in a given day.
     conv_flux_mag(flux: np.array)
         Convert positive flux into magnitude.
-    evaluate_bazin(param: list, time: np.array) -> np.array
-        Evaluate the Bazin function given parameter values.
     load_snpcc_lc(path_to_data: str)
         Reads header and photometric information for 1 light curve.
     load_plasticc_lc(photo_file: str, snid: int)
@@ -315,7 +313,7 @@ class LightCurve:
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
 
             else:
-                raise ValueError('Only "Bazin" and "malanchev" features are implemented!')
+                raise ValueError('Only "Bazin" and "Malanchev" features are implemented!')
 
         elif sum(surv_flag):
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \

@@ -143,7 +143,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_features(path_to_bazin_file, method='bazin')
+    >>> data.load_features(path_to_bazin_file, method='Bazin')
 
     Separate training and test samples and classify
 
@@ -236,8 +236,8 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         feature_extractor: str (optional)
-            Function used for feature extraction. Options are "bazin", 
-            "bump", or "malanchev". Default is "bump".
+            Function used for feature extraction. Options are "Bazin",
+            "Bump", or "Malanchev". Default is "Bazin".
         """
 
         # read matrix with features
@@ -467,7 +467,7 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-    def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
+    def load_features(self, path_to_file: str, feature_extractor: str ='Bazin',
                       screen=False, survey='DES', sample=None ):
         """Load features according to the chosen feature extraction method.
 
@@ -480,8 +480,8 @@ class DataBase:
             Complete path to features file.
         feature_extractor: str (optional)
             Feature extraction method. The current implementation only
-            accepts =='bazin', 'bump', 'malanchev', or 'photometry'.
-            Default is 'bazin'.
+            accepts =='Bazin', 'Bump', 'Malanchev', or 'photometry'.
+            Default is 'Bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -502,7 +502,8 @@ class DataBase:
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
         else:
-            raise ValueError('Only bazin, bump, malanchev, or photometry features are implemented!'
+            feature_extractors = ', '.join(FEATURE_EXTRACTOR_REGISTRY.keys())
+            raise ValueError(f'Only {feature_extractors} or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):

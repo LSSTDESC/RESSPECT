@@ -94,7 +94,6 @@ def _snpcc_sample_fit(
          one for each light curve.
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
     feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
     light_curve_data = feature_extractor_class()
@@ -123,7 +122,7 @@ def fit_snpcc(
         File names prefix
      number_of_processors: int, default 1
         Number of cpu processes to use.
-     feature_extractor: str, default bazin
+     feature_extractor: str, default Bazin
         Function used for feature extraction.
     """
     if feature_extractor == 'Bazin':
@@ -202,7 +201,7 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
         'train' or 'test'. Default is 'train'.
     number_of_processors: int, default 1
         Number of cpu processes to use.
-    feature_extractor: str, default bazin
+    feature_extractor: str, default Bazin
         feature extraction method
     """
 
@@ -251,7 +250,6 @@ def _TOM_sample_fit(
         SNID
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
     feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
     light_curve_data = feature_extractor_class()
@@ -315,7 +313,6 @@ def _sample_fit(
         SNID
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
     feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
     light_curve_data = feature_extractor_class()

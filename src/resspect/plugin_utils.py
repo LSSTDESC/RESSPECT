@@ -1,6 +1,7 @@
 import importlib
-from resspect.classifiers import CLASSIFIER_REGISTRY
-from resspect.feature_extractors.light_curve import LightCurve, FEATURE_EXTRACTOR_REGISTRY
+from resspect.classifiers import CLASSIFIER_REGISTRY, ResspectClassifier
+from resspect.query_strategies import QUERY_STRATEGY_REGISTRY, QueryStrategy
+from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY, LightCurve
 
 def get_or_load_class(class_name: str, registry: dict) -> type:
     """Given the name of a class and a registry dictionary, attempt to return
@@ -25,10 +26,15 @@ def get_or_load_class(class_name: str, registry: dict) -> type:
         `name` key was found in the config.
     """
 
-    if class_name in registry:
-        returned_class = registry[class_name]
-    else:
-        returned_class = import_module_from_string(class_name)
+    returned_class = None
+
+    try:
+        if class_name in registry:
+            returned_class = registry[class_name]
+        else:
+            returned_class = import_module_from_string(class_name)
+    except ValueError as exc:
+        raise ValueError(f"Error fetching class: {class_name}") from exc
 
     return returned_class
 
@@ -85,7 +91,7 @@ def import_module_from_string(module_path: str) -> type:
     return returned_cls
 
 
-def fetch_classifier_class(classifier_name: str) -> type:
+def fetch_classifier_class(classifier_name: str) -> ResspectClassifier:
     """Fetch the classifier class from the registry.
 
     Parameters
@@ -96,8 +102,8 @@ def fetch_classifier_class(classifier_name: str) -> type:
 
     Returns
     -------
-    type
-        The classifier class.
+    ResspectClassifier
+        The subclass of ResspectClassifier.
 
     Raises
     ------
@@ -107,14 +113,32 @@ def fetch_classifier_class(classifier_name: str) -> type:
         If no classifier was specified in the runtime configuration.
     """
 
-    clf_class = None
+    return get_or_load_class(classifier_name, CLASSIFIER_REGISTRY)
 
-    try:
-        clf_class = get_or_load_class(classifier_name, CLASSIFIER_REGISTRY)
-    except ValueError as exc:
-        raise ValueError(f"Error fetching class: {classifier_name}") from exc
 
+def fetch_query_strategy_class(query_strategy_name: str) -> QueryStrategy:
+    """Fetch the query strategy class from the registry.
+
+    Parameters
+    ----------
+    query_strategy_name : str
+        The name of the query strategy class to retrieve. This should either be the
     return clf_class
+
+    Returns
+    -------
+    QueryStrategy
+        The subclass of QueryStrategy.
+
+    Raises
+    ------
+    ValueError
+        If a built-in query strategy was requested, but not found in the registry.
+    ValueError
+        If no query strategy was specified in the runtime configuration.
+    """
+
+    return get_or_load_class(query_strategy_name, QUERY_STRATEGY_REGISTRY)
 
 
 def fetch_feature_extractor_class(feature_extractor_name: str) -> LightCurve:
@@ -129,7 +153,7 @@ def fetch_feature_extractor_class(feature_extractor_name: str) -> LightCurve:
     Returns
     -------
     LightCurve
-        The subclass of QueryStrategy.
+        The subclass of LightCurve.
 
     Raises
     ------

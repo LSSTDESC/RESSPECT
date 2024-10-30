@@ -123,7 +123,7 @@ def fetch_query_strategy_class(query_strategy_name: str) -> QueryStrategy:
     ----------
     query_strategy_name : str
         The name of the query strategy class to retrieve. This should either be the
-    return clf_class
+    name of the class or the import specification for the class.
 
     Returns
     -------

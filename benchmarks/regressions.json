@@ -1,1 +1,1 @@
-{"regressions": [["benchmarks.peakmem_learn_loop('RandomForest')", "graphs/Cython/branch-HEAD/build/machine-gh-runner/packaging/python-3.10/benchmarks.peakmem_learn_loop.json", {}, 0, 188002304.0, 168398848.0, [[null, 1264, 168398848.0, 188002304.0]]], ["benchmarks.peakmem_learn_loop('KNN')", "graphs/Cython/branch-HEAD/build/machine-gh-runner/packaging/python-3.10/benchmarks.peakmem_learn_loop.json", {}, 1, 195563520.0, 172924928.0, [[null, 1264, 172924928.0, 195563520.0]]]]}
+{"regressions": []}

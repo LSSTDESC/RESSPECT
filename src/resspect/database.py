@@ -25,7 +25,6 @@ from resspect.plugin_utils import (
     fetch_query_strategy_class
 )
 from resspect.filter_sets import FILTER_SETS
-from resspect.feature_extractors.feature_extractor_utils import create_filter_feature_names
 
 __all__ = ['DataBase']
 
@@ -240,6 +239,10 @@ class DataBase:
             "Bump", or "Malanchev". Default is "Bazin".
         """
 
+        if survey not in ['DES', 'LSST']:
+            raise ValueError('Only "DES" and "LSST" filters are ' + \
+                             'implemented at this point!')
+
         # read matrix with features
         if '.tar.gz' in path_to_features_file:
             tar = tarfile.open(path_to_features_file, 'r:gz')
@@ -257,41 +260,21 @@ class DataBase:
 
         # Get the list of feature names from the feature extractor class
         feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
-        feature_names = feature_extractor_class.feature_names
 
         # Create the filter-feature names based on the survey.
         survey_filters = FILTER_SETS[survey]
-        self.features_names = create_filter_feature_names(survey_filters, feature_names)
+        self.features_names = feature_extractor_class.get_features(survey_filters)
 
-        if survey == 'DES':
-            self.metadata_names = ['id', 'redshift', 'type', 'code',
-                                   'orig_sample', 'queryable']
+        self.metadata_names = ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
+        if 'objid' in data.keys():
+            self.metadata_names = ['objid', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
 
-            if 'last_rmag' in data.keys():
+        if 'last_rmag' in data.keys():
                 self.metadata_names.append('last_rmag')
 
-            for name in self.telescope_names:
-                if 'cost_' + name in data.keys():
-                    self.metadata_names = self.metadata_names + ['cost_' + name]
-
-        elif survey == 'LSST':
-            if 'objid' in data.keys():
-                self.metadata_names = ['objid', 'redshift', 'type', 'code',
-                                       'orig_sample', 'queryable']
-            elif 'id' in data.keys():
-                self.metadata_names = ['id', 'redshift', 'type', 'code',
-                                       'orig_sample', 'queryable']
-                
-            if 'last_rmag' in data.keys():
-                self.metadata_names.append('last_rmag')
-
-            for name in self.telescope_names:
-                if 'cost_' + name in data.keys():
-                    self.metadata_names = self.metadata_names + ['cost_' + name]
-
-        else:
-            raise ValueError('Only "DES" and "LSST" filters are ' + \
-                             'implemented at this point!')
+        for name in self.telescope_names:
+            if 'cost_' + name in data.keys():
+                self.metadata_names = self.metadata_names + ['cost_' + name]
 
         if sample == None:
             self.features = data[self.features_names].values

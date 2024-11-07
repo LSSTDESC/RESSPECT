@@ -25,7 +25,10 @@ from resspect.lightcurves_utils import (
     read_file,
     read_plasticc_full_photometry_data,
 )
-from resspect.feature_extractors.feature_extractor_utils import make_features_header
+from resspect.feature_extractors.feature_extractor_utils import (
+    create_filter_feature_names,
+    make_features_header,
+)
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
@@ -145,6 +148,24 @@ class LightCurve:
         Populates self.features.
         """
         raise NotImplementedError()
+
+
+    @classmethod
+    def get_features(cls, filters: list) -> list[str]:
+        """
+        Returns the header for the features extracted for all filters, excludes
+        non-feature columns (i.e. id, redshift, type, code, orig_sample, ...)
+
+        Parameters
+        ----------
+        filters: list
+            List of broad band filters.
+
+        Returns
+        -------
+        list
+        """
+        return create_filter_feature_names(filters, cls.feature_names)
 
     @classmethod
     def get_feature_header(cls, filters: list, **kwargs) -> list[str]:

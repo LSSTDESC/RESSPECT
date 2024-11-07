@@ -38,7 +38,6 @@ def make_features_header(
     if kwargs.get('override_primary_columns', False):
         header = kwargs.get('override_primary_columns')
 
-
     if kwargs.get('with_queryable', False):
         header.append('queryable')
     if kwargs.get('with_last_rmag', False):

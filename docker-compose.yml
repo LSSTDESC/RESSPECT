@@ -5,8 +5,6 @@ services:
     build: ./
     ports:
       - "8081:8081"
-    depends_on:
-      - "db"
     volumes:
       - type: bind
         source: ./
@@ -24,28 +22,6 @@ services:
       - DB_NAME=resspectdb
     networks:
       - tom_desc_default
-  db:
-    container_name: resspectdb
-    image: postgres
-    networks: 
-      - tom_desc_default
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=verysecurepassword
-      - POSTGRES_DB=resspectdb
-      - POSTGRES_DATA_DIR=/docker-entrypoint-initdb.d
-    volumes:
-      - type: bind
-        source: ./resspectdb.sql
-        target: /docker-entrypoint-initdb.d/resspectdb.sql
-      - type: bind
-        source: ./src/resspect
-        target: /resspect
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d resspectdb"]
-      interval: 1s
-      timeout: 5s
-      retries: 10
 
 networks:
   tom_desc_default:

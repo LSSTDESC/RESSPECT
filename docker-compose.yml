@@ -1,3 +1,5 @@
+include: 
+  - ${TOM_DESC_DIR:-../tom_desc}/tests/docker-compose.yaml
 services:
   resspect:
     tty: true
@@ -20,10 +22,3 @@ services:
       - DB_HOST=resspectdb
       - DB_PORT=5432
       - DB_NAME=resspectdb
-    networks:
-      - tom_desc_default
-
-networks:
-  tom_desc_default:
-    external: true
-

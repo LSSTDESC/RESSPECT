@@ -1,0 +1,41 @@
+name: Tom tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tom-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout RESSPECT
+      uses: actions/checkout@v4
+      with:
+        path: resspect
+            
+    - name: Checkout tom_desc
+      uses: actions/checkout@v4
+      with:
+        repository: LSSTDESC/tom_desc
+        path: tom_desc
+        submodules: 'recursive'
+    
+    - name: Unpack test files
+      working-directory: tom_desc/tests
+      run: |
+        tar xf elasticc2_alert_test_data.tar.bz2
+    
+    - name: Bring docker environments up
+      working-directory: resspect
+      env:
+        TOM_DESC_DIR: ../tom_desc
+      run: |
+        docker compose up -d resspect
+    
+    - name: Run a command
+      working-directory: resspect
+      run: |
+        docker compose exec -it resspect /bin/bash -c "echo hello world"

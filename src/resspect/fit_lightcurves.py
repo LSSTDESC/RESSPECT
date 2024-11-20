@@ -25,6 +25,7 @@ from resspect.lightcurves_utils import (
     PLASTICC_TARGET_TYPES,
     PLASTICC_RESSPECT_FEATURES_HEADER,
 )
+from resspect.feature_handling_utils import save_features
 from resspect.filter_sets import FILTER_SETS
 from resspect.plugin_utils import fetch_feature_extractor_class
 from resspect.tom_client import TomClient
@@ -33,41 +34,6 @@ __all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit"]
 
 
 MAX_NUMBER_OF_PROCESSES = 8
-
-
-def _get_features_to_write(light_curve_data) -> list:
-    """
-    Returns features list to write
-
-    Parameters
-    ----------
-    light_curve_data
-        fitted light curve data
-    """
-    features_list = [light_curve_data.id, light_curve_data.redshift,
-                     light_curve_data.sntype, light_curve_data.sncode,
-                     light_curve_data.sample]
-    features_list.extend(light_curve_data.features)
-    return features_list
-
-
-def write_features_to_output_file(
-        light_curve_data, features_file: IO):
-    """
-    Writes fitted light curve data to output features file
-
-    Parameters
-    ----------
-    light_curve_data
-        fitted ligtht curve data
-    features_file
-        features output file
-    """
-    current_features = _get_features_to_write(
-        light_curve_data)
-    features_file.write(
-        ','.join(str(each_feature) for each_feature
-                 in current_features) + '\n')
 
 
 def _snpcc_sample_fit(
@@ -123,16 +89,20 @@ def fit_snpcc(
                   if each_file.startswith(file_prefix)]
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting SNPCC " + feature_extractor + " fit...")
-    with open(features_file, 'w') as snpcc_features_file:
-        snpcc_features_file.write(','.join(header) + '\n')
-        
-        for light_curve_data in multi_process.starmap(
-                _snpcc_sample_fit, zip(
-                    files_list, repeat(path_to_data_dir), repeat(feature_extractor))):
-            if 'None' not in light_curve_data.features:
-                write_features_to_output_file(
-                    light_curve_data, snpcc_features_file)
-    logging.info("Features have been saved to: %s", features_file)
+
+    feature_data = []
+    for light_curve_data in multi_process.starmap(
+        _snpcc_sample_fit,
+        zip(
+            files_list,
+            repeat(path_to_data_dir),
+            repeat(feature_extractor)
+        )
+    ):
+        if 'None' not in light_curve_data.features:
+            feature_data.append(light_curve_data.get_features_to_write())
+    features_df = pd.DataFrame(feature_data, columns=header)
+    save_features(features_df, location="filesystem", filename=features_file)
 
 
 def _plasticc_sample_fit(
@@ -210,20 +180,22 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
     snid_values = np.array(list(snid_values.items()))
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting PLAsTiCC " + feature_extractor + " fit...")
-    with open(output_file, 'w') as plasticc_features_file:
-        # TODO: Current implementation uses bazin features header for
-        #  all feature extraction
-        plasticc_features_file.write(
-            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
-        iterator_list = zip(
-            snid_values[:, 0].tolist(), snid_values[:, 1].tolist(), repeat(path_photo_file),
-            repeat(sample), repeat(light_curve_data), repeat(meta_header))
-        for light_curve_data in multi_process.starmap(
-                _plasticc_sample_fit, iterator_list):
-            if 'None' not in light_curve_data.features:
-                write_features_to_output_file(
-                    light_curve_data, plasticc_features_file)
-    logging.info("Features have been saved to: %s", output_file)
+    # TODO: Current implementation uses bazin features header for
+    #  all feature extraction
+    feature_data = []
+    iterator_list = zip(
+        snid_values[:, 0].tolist(),
+        snid_values[:, 1].tolist(),
+        repeat(path_photo_file),
+        repeat(sample),
+        repeat(light_curve_data),
+        repeat(meta_header)
+    )
+    for light_curve_data in multi_process.starmap(_plasticc_sample_fit, iterator_list):
+        if 'None' not in light_curve_data.features:
+            feature_data.append(light_curve_data.get_features_to_write())
+    features_df = pd.DataFrame(feature_data, header=PLASTICC_RESSPECT_FEATURES_HEADER)
+    save_features(features_df, location="filesystem", filename=output_file)
 
 def _TOM_sample_fit(
         obj_dic: dict, feature_extractor: str):
@@ -275,16 +247,18 @@ def fit_TOM(data_dic: dict, output_features_file: str,
 
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting TOM " + feature_extractor + " fit...")
-    with open(output_features_file, 'w') as TOM_features_file:
-        TOM_features_file.write(','.join(header) + '\n')
-        
-        for light_curve_data in multi_process.starmap(
-                _TOM_sample_fit, zip(
-                    data_dic, repeat(feature_extractor))):
-            if 'None' not in light_curve_data.features:
-                write_features_to_output_file(
-                    light_curve_data, TOM_features_file)
-    logging.info("Features have been saved to: %s", output_features_file)
+    feature_data = []
+    for light_curve_data in multi_process.starmap(
+        _TOM_sample_fit,
+        zip(
+            data_dic,
+            repeat(feature_extractor)
+        )
+    ):
+        if 'None' not in light_curve_data.features:
+            feature_data.append(light_curve_data.get_features_to_write())
+    features_df = pd.DataFrame(feature_data, columns=header)
+    save_features(features_df, location="filesystem", filename=output_features_file)
 
 def _sample_fit(
         obj_dic: dict, feature_extractor: str, filters: list, type: str, one_code: list,
@@ -382,21 +356,26 @@ def fit(
 
     feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
     header = feature_extractor_class.get_feature_header(filters)
+    feature_data = []
 
     multi_process = multiprocessing.Pool(number_of_processors)
     if feature_extractor != None:
         logging.info("Starting " + feature_extractor + " fit...")
-        with open(output_features_file, 'w') as features_file:
-            features_file.write(','.join(header) + '\n')
-            
-            for light_curve_data in multi_process.starmap(
-                    _sample_fit, zip(
-                        data_dic, repeat(feature_extractor), repeat(filters), repeat(type), 
-                        repeat(one_code), repeat(additional_info))):
-                if 'None' not in light_curve_data.features:
-                    write_features_to_output_file(
-                        light_curve_data, features_file)
-    logging.info("Features have been saved to: %s", output_features_file)
+        for light_curve_data in multi_process.starmap(
+            _sample_fit, zip(
+                data_dic,
+                repeat(feature_extractor),
+                repeat(filters),
+                repeat(type),
+                repeat(one_code),
+                repeat(additional_info)
+            )
+        ):
+            if 'None' not in light_curve_data.features:
+                feature_data.append(light_curve_data.get_features_to_write())
+
+    features_df = pd.DataFrame(feature_data, columns=header)
+    save_features(features_df, location="filesystem", filename=output_features_file)
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 

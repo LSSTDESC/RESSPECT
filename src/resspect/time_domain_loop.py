@@ -313,7 +313,7 @@ def _get_indices_of_objects_to_be_queried(
             strategy=config.strategy,
             batch=config.batch,
             queryable=config.queryable,
-            query_thre=config.query_thre,
+            query_threshold=config.query_thre,
         )
     return list(object_indices)
 

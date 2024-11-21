@@ -54,6 +54,7 @@ from .bump import *
 from .feature_extractors.malanchev import *
 from .feature_extractors.bazin import *
 from .feature_extractors.bump import *
+from .feature_handling_utils import *
 from .plugin_utils import *
 
 import importlib.metadata

@@ -449,3 +449,15 @@ class LightCurve:
         self.sntype = None
         self.sncode = None
         self.sample = None
+
+    def get_features_to_write(self) -> list:
+        """Returns features list to write."""
+        features_list = [
+            self.id,
+            self.redshift,
+            self.sntype,
+            self.sncode,
+            self.sample]
+        features_list.extend(self.features)
+        return features_list
+

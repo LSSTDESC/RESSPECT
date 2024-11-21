@@ -10,6 +10,7 @@
 # limitations under the License.
 
 import io
+import logging
 import os
 import pandas as pd
 import tarfile
@@ -28,6 +29,7 @@ from resspect.filter_sets import FILTER_SETS
 
 __all__ = ['DataBase']
 
+logger = logging.getLogger(__name__)
 
 class DataBase:
     """DataBase object, upon which the active learning loop is performed.
@@ -183,6 +185,7 @@ class DataBase:
         self.classprob = np.array([])
         self.data = pd.DataFrame()
         self.ensemble_probs = None
+        self.feature_extractor_class = None
         self.features = pd.DataFrame([])
         self.features_names = []
         self.metadata = pd.DataFrame()
@@ -213,7 +216,7 @@ class DataBase:
         self.validation_prob = np.array([])
 
     def load_features_from_file(self, path_to_features_file: str, screen=False,
-                      survey='DES', sample=None, feature_extractor: str='Bazin'):
+                      survey='DES', sample=None):
 
         """Load features from file.
 
@@ -234,14 +237,10 @@ class DataBase:
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
             Default is None.
-        feature_extractor: str (optional)
-            Function used for feature extraction. Options are "Bazin",
-            "Bump", or "Malanchev". Default is "Bazin".
         """
 
-        if survey not in ['DES', 'LSST']:
-            raise ValueError('Only "DES" and "LSST" filters are ' + \
-                             'implemented at this point!')
+        if survey not in FILTER_SETS:
+            raise ValueError(f"Only {','.join(FILTER_SETS.keys())} filter sets are implemented!")
 
         # read matrix with features
         if '.tar.gz' in path_to_features_file:
@@ -254,27 +253,23 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_features_file, index_col=False)
 
-        # check if queryable is there
+        metadata_flags = {'with_queryable' : True}
         if 'queryable' not in data.keys():
             data['queryable'] = [True for i in range(data.shape[0])]
 
-        # Get the list of feature names from the feature extractor class
-        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        if 'last_rmag' in data.keys():
+            metadata_flags['with_last_rmag'] = True
+
+        cost_flags = []
+        for name in self.telescope_names:
+            if 'cost_' + name in data.keys():
+                cost_flags.append('cost_' + name)
+        metadata_flags['with_cost'] = cost_flags
 
         # Create the filter-feature names based on the survey.
         survey_filters = FILTER_SETS[survey]
-        self.features_names = feature_extractor_class.get_features(survey_filters)
-
-        self.metadata_names = ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
-        if 'objid' in data.keys():
-            self.metadata_names = ['objid', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
-
-        if 'last_rmag' in data.keys():
-                self.metadata_names.append('last_rmag')
-
-        for name in self.telescope_names:
-            if 'cost_' + name in data.keys():
-                self.metadata_names = self.metadata_names + ['cost_' + name]
+        self.features_names = self.feature_extractor_class.get_features(survey_filters)
+        self.metadata_names = self.feature_extractor_class.get_metadata_header(**metadata_flags)
 
         if sample == None:
             self.features = data[self.features_names].values
@@ -315,6 +310,9 @@ class DataBase:
                 print('Loaded ', self.pool_metadata.shape[0], ' ' + \
                       sample +  ' samples!')
 
+
+    #! How is this method suppose to work in the context of the various feature extractors?
+    #! It is only called when the feature extractor is 'photometry'.
     def load_photometry_features(self, path_to_photometry_file: str,
                                  screen=False, sample=None):
         """Load photometry features from file.
@@ -414,14 +412,9 @@ class DataBase:
         if feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
-        elif feature_extractor in FEATURE_EXTRACTOR_REGISTRY:
-            self.load_features_from_file(
-                path_to_file, screen=screen, survey=survey,
-                sample=sample, feature_extractor=feature_extractor)
         else:
-            feature_extractors = ', '.join(FEATURE_EXTRACTOR_REGISTRY.keys())
-            raise ValueError(f'Only {feature_extractors} or photometry features are implemented!'
-                             '\n Feel free to add other options.')
+            self.feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+            self.load_features_from_file(path_to_file, screen=screen, survey=survey, sample=sample)
 
     def load_plasticc_mjd(self, path_to_data_dir):
         """Return all MJDs from 1 file from PLAsTiCC simulations.
@@ -465,7 +458,7 @@ class DataBase:
         self.plasticc_mjd_lim = [min(min_mjd), max(max_mjd)]
 
     def identify_keywords(self):
-        """Break degenerescency between keywords with equal meaning.
+        """Break degeneracy between keywords with equal meaning.
 
         Returns
         -------
@@ -478,6 +471,9 @@ class DataBase:
             id_name = 'id'
         elif 'objid' in self.metadata_names:
             id_name = 'objid'
+        else:
+            logger.warning('No object identification found in metadata - using first column as object identification!')
+            id_name = self.metadata_names[0]
 
         return id_name
 
@@ -503,35 +499,39 @@ class DataBase:
             from independent files.
         """
 
-        # object if keyword
-        id_name = self.identify_keywords()
+        #^ Manipulate the dataframe to change the `non_anomaly_classes` into pos/neg values.
+        id_column = self.feature_extractor_class.id_column
+        label_column = self.feature_extractor_class.label_column
+        non_anomaly_classes = self.feature_extractor_class.non_anomaly_classes
 
         if sep_files:
             # get samples labels in a separate object
             if self.train_metadata.shape[0] > 0:
-                train_labels = self.train_metadata['type'].values == 'Ia'
+                train_labels = self.train_metadata[label_column].isin(non_anomaly_classes)
                 self.train_labels = train_labels.astype(int)
 
             if self.test_metadata.shape[0] > 0:
-                test_labels = self.test_metadata['type'].values == 'Ia'
+                test_labels = self.test_metadata[label_column].isin(non_anomaly_classes)
                 self.test_labels = test_labels.astype(int)
 
             if self.validation_metadata.shape[0] > 0:
-                validation_labels = self.validation_metadata['type'].values == 'Ia'
+                validation_labels = self.validation_metadata[label_column].isin(non_anomaly_classes)
                 self.validation_labels = validation_labels.astype(int)
 
             if self.pool_metadata.shape[0] > 0:
-                pool_labels = self.pool_metadata['type'].values == 'Ia'
+                pool_labels = self.pool_metadata[label_column].isin(non_anomaly_classes)
                 self.pool_labels = pool_labels.astype(int)
 
             # identify asked to consider queryable flag
             if queryable and len(self.pool_metadata) > 0:
                 queryable_flag = self.pool_metadata['queryable'].values
-                self.queryable_ids = self.pool_metadata[queryable_flag][id_name].values
+                self.queryable_ids = self.pool_metadata[queryable_flag][id_column].values
 
             elif len(self.pool_metadata) > 0:
-                self.queryable_ids = self.pool_metadata[id_name].values
+                self.queryable_ids = self.pool_metadata[id_column].values
 
+
+        #^ Should we continue to support the case of all samples in the same file???
         else:
             train_flag = self.metadata['orig_sample'] == 'train'
             train_data = self.features[train_flag]
@@ -563,9 +563,9 @@ class DataBase:
 
             if queryable:
                 queryable_flag = self.pool_metadata['queryable'].values
-                self.queryable_ids = self.pool_metadata[queryable_flag][id_name].values
+                self.queryable_ids = self.pool_metadata[queryable_flag][id_column].values
             else:
-                self.queryable_ids = self.pool_metadata[id_name].values
+                self.queryable_ids = self.pool_metadata[id_column].values
 
             if nclass == 2:
                 train_ia_flag = self.train_metadata['type'].values == 'Ia'
@@ -595,8 +595,8 @@ class DataBase:
 
         # check repeated ids between training and pool
         if len(self.train_metadata) > 0 and len(self.pool_metadata) > 0:
-            for name in self.train_metadata[id_name].values:
-                if name in self.pool_metadata[id_name].values:
+            for name in self.train_metadata[id_column].values:
+                if name in self.pool_metadata[id_column].values:
                     raise ValueError('Object ', name, 'found in both, training ' +\
                                     'and pool samples!')
 
@@ -608,7 +608,7 @@ class DataBase:
         repeated_ids_samples = []
         for i in range(4):
             if pds[i].shape[0] > 0:
-                delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+                delta = len(np.unique(pds[i][id_column].values)) - pds[i].shape[0]
                 if abs(delta) > 0:
                     repeated_ids_samples.append([names[i], delta])
 
@@ -647,7 +647,9 @@ class DataBase:
         """
 
         # object if keyword
-        id_name = self.identify_keywords()
+        id_name = self.feature_extractor_class.id_column
+        label_column = self.feature_extractor_class.label_column
+        non_anomaly_classes = self.feature_extractor_class.non_anomaly_classes
 
         # identify Ia
         if sep_files:
@@ -655,7 +657,7 @@ class DataBase:
         else:
             data_copy = self.metadata.copy()
 
-        ia_flag = data_copy['type'] == 'Ia'
+        ia_flag = data_copy[label_column].isin(non_anomaly_classes)
 
         # separate per class
         Ia_data = data_copy[ia_flag]
@@ -673,13 +675,15 @@ class DataBase:
 
         self.train_metadata = data_copy[train_flag]
 
+        #! Need to fix the hardcoded "Ia"'s here!!!
+
         if sep_files:
             self.train_features = self.train_features[train_flag]
-            test_labels = self.test_metadata['type'].values == 'Ia'
+            test_labels = self.test_metadata[label_column].values == 'Ia'
             self.test_labels = test_labels.astype(int)
-            validation_labels = self.validation_metadata['type'].values == 'Ia'
+            validation_labels = self.validation_metadata[label_column].values == 'Ia'
             self.validation_labels = validation_labels.astype(int)
-            pool_labels = self.pool_metadata['type'].values == 'Ia'
+            pool_labels = self.pool_metadata[label_column].values == 'Ia'
             self.pool_labels = pool_labels.astype(int)
 
         else:
@@ -693,12 +697,12 @@ class DataBase:
             self.pool_features = self.test_features
             self.validation_features = self.test_features
             self.validation_metadata = self.test_metadata
-            test_label_flag = data_copy['type'][test_flag].values == 'Ia'
+            test_label_flag = data_copy[label_column][test_flag].values == 'Ia'
             self.test_labels = test_label_flag.astype(int)
             self.pool_labels = self.test_labels
             self.validation_labels = self.test_labels
 
-        train_label_flag = data_copy['type'][train_flag].values == 'Ia'
+        train_label_flag = data_copy[label_column][train_flag].values == 'Ia'
         self.train_labels = train_label_flag.astype(int)
 
         if queryable and not sep_files:
@@ -968,15 +972,8 @@ class DataBase:
         # photo Ia flag
         photo_flag = self.validation_prob[:,1] >= threshold
 
-        if 'objid' in self.validation_metadata.keys():
-            id_name = 'objid'
-        elif 'id' in self.validation_metadata.keys():
-            id_name = 'id'
-
         # get ids
-        photo_Ia_metadata = self.validation_metadata[photo_flag]
-
-        self.photo_Ia_metadata = photo_Ia_metadata
+        self.photo_Ia_metadata = self.validation_metadata[photo_flag]
 
 
     def translate_types(self, metadata_fname: str):

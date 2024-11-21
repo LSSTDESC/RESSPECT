@@ -108,7 +108,7 @@ class LoopConfiguration(BaseConfiguration):
     photo_ids_froot: str =' '
     classifier_bootstrap: bool = False
     save_predictions: bool = False
-    sep_files=False
+    sep_files: bool = False
     pred_dir: str = None
     queryable: bool = False
     metric_label: str = 'snpcc'
@@ -130,7 +130,11 @@ class LoopConfiguration(BaseConfiguration):
                     raise ValueError(f"path for '{key}' does not exist.")
         else:
             raise ValueError("`path_to_features` must be a str or dict.")
-        
+
+        if isinstance(self.pretrained_model_path, str):
+            if not path.isfile(self.pretrained_model_path):
+                raise ValueError("`pretrained_model_path` must be an existing file.")
+
         if self.SNANA_types:
             if self.metadata_fname is None:
                 raise ValueError("`SNANA_types` is enabled and metadata file was not provided.")

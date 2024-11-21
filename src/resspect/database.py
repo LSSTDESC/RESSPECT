@@ -26,6 +26,7 @@ from resspect.plugin_utils import (
     fetch_query_strategy_class
 )
 from resspect.filter_sets import FILTER_SETS
+from resspect.feature_handling_utils import load_external_features
 
 __all__ = ['DataBase']
 
@@ -215,9 +216,13 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features_from_file(self, path_to_features_file: str, screen=False,
-                      survey='DES', sample=None):
-
+    def process_features(
+        self,
+        data: pd.DataFrame,
+        screen=False,
+        survey='DES',
+        sample=None
+    ):
         """Load features from file.
 
         Populate properties: features, feature_names, metadata
@@ -225,8 +230,8 @@ class DataBase:
 
         Parameters
         ----------
-        path_to_features_file: str
-            Complete path to features file.
+        data: pandas.DataFrame
+            The preloaded features.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -241,17 +246,6 @@ class DataBase:
 
         if survey not in FILTER_SETS:
             raise ValueError(f"Only {','.join(FILTER_SETS.keys())} filter sets are implemented!")
-
-        # read matrix with features
-        if '.tar.gz' in path_to_features_file:
-            tar = tarfile.open(path_to_features_file, 'r:gz')
-            fname = tar.getmembers()[0]
-            content = tar.extractfile(fname).read()
-            data = pd.read_csv(io.BytesIO(content))
-            tar.close()
-
-        else:
-            data = pd.read_csv(path_to_features_file, index_col=False)
 
         metadata_flags = {'with_queryable' : True}
         if 'queryable' not in data.keys():
@@ -313,8 +307,12 @@ class DataBase:
 
     #! How is this method suppose to work in the context of the various feature extractors?
     #! It is only called when the feature extractor is 'photometry'.
-    def load_photometry_features(self, path_to_photometry_file: str,
-                                 screen=False, sample=None):
+    def process_photometry_features(
+        self,
+        data: pd.DataFrame,
+        screen=False,
+        sample=None
+    ):
         """Load photometry features from file.
 
         Gets as input file containing fitted flux in homogeneized cadences.
@@ -324,8 +322,8 @@ class DataBase:
 
         Parameters
         ----------
-        path_to_photometry_file: str
-            Complete path to photometry features file.
+        data: pd.DataFrame
+            The preloaded photometry data.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -334,21 +332,6 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
-
-        # read matrix with full photometry
-        if '.tar.gz' in path_to_photometry_file:
-            tar = tarfile.open(path_to_photometry_file, 'r:gz')
-            fname = tar.getmembers()[0]
-            content = tar.extractfile(fname).read()
-            data = pd.read_csv(io.BytesIO(content))
-            tar.close()
-        else:
-            data = pd.read_csv(path_to_photometry_file,
-                               index_col=False)
-            if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_photometry_file,
-                                   sep=' ', index_col=False)
-
         # list of features to use
         self.features_names = data.keys()[5:]
 
@@ -409,12 +392,12 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
+        features_data = load_external_features(path_to_file, location="filesystem")
         if feature_extractor == "photometry":
-            self.load_photometry_features(path_to_file, screen=screen,
-                                          survey=survey, sample=sample)
+            self.process_photometry_features(features_data, screen=screen, survey=survey, sample=sample)
         else:
             self.feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
-            self.load_features_from_file(path_to_file, screen=screen, survey=survey, sample=sample)
+            self.process_features(features_data, screen=screen, survey=survey, sample=sample)
 
     def load_plasticc_mjd(self, path_to_data_dir):
         """Return all MJDs from 1 file from PLAsTiCC simulations.

@@ -25,7 +25,8 @@ def save_features(
         else:
             raise ValueError("filename must be provided if saving to the filesystem.")
     elif location == "mongodb":
-        with open("~/homework/mongodb_test.pass") as f:
+        # temporary local fix obviously
+        with open("/Users/maxwest/homework/mongodb_test.pass") as f:
             MONGO_URI = f.readline().strip("\n")
         client = MongoClient(MONGO_URI)
         db = client[MONGODB_NAME]
@@ -42,8 +43,10 @@ def save_features(
 def load_external_features(
         filename: str = None,
         location: str = "filesystem",
+        mongo_query: dict = None,
+        feature_extractor: str = "Malanchev",
 ):
-    "Load features from a .csv file."
+    "Load features from a .csv file or download them from a MongoDB instance."
     data = None
     if location == "filesystem":
         if filename is not None:
@@ -59,6 +62,19 @@ def load_external_features(
                     data = pd.read_csv(filename, sep=' ', index_col=False)
         else:
             raise ValueError("filename must be provided if reading from the filesystem.")
+    elif location == "mongodb":
+        with open("/Users/maxwest/homework/mongodb_test.pass") as f:
+            MONGO_URI = f.readline().strip("\n")
+        client = MongoClient(MONGO_URI)
+        db = client[MONGODB_NAME]
+        collection = db[MONGO_COLLECTION_NAMES[feature_extractor]]
+
+        cursor = collection.find(mongo_query)
+        data_dicts = []
+        for element in cursor:
+            data_dicts.append(element)
+        # Potential TODO: drop the MongoDB `_id` column ?
+        data = pd.DataFrame(data_dicts)
     else:
-        raise NotImplementedError("Alternative storage method implementation tbd.")
+        raise ValueError("location must either be 'filesystem' or 'location'")
     return data

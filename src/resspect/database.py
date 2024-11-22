@@ -365,8 +365,16 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-    def load_features(self, path_to_file: str, feature_extractor: str ='Bazin',
-                      screen=False, survey='DES', sample=None ):
+    def load_features(
+        self,
+        path_to_file: str = None,
+        mongo_query: dict = None,
+        feature_extractor: str ='Bazin',
+        screen=False,
+        survey='DES',
+        sample=None,
+        location="filesystem",
+    ):
         """Load features according to the chosen feature extraction method.
 
         Populates properties: data, features, feature_list, header
@@ -392,7 +400,12 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
-        features_data = load_external_features(path_to_file, location="filesystem")
+        features_data = load_external_features(
+            filename=path_to_file,
+            mongo_query=mongo_query,
+            feature_extractor=feature_extractor,
+            location=location,
+        )
         if feature_extractor == "photometry":
             self.process_photometry_features(features_data, screen=screen, survey=survey, sample=sample)
         else:

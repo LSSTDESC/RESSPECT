@@ -61,9 +61,13 @@ def _snpcc_sample_fit(
 
 
 def fit_snpcc(
-        path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-        feature_extractor: str = 'Bazin'):
+        path_to_data_dir: str,
+        save_location: str = "filesystem",
+        features_file: str = None,
+        file_prefix: str = "DES_SN",
+        number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
+        feature_extractor: str = 'Bazin'
+    ):
     """
     Perform fit to all objects in the SNPCC data.
 
@@ -102,7 +106,7 @@ def fit_snpcc(
         if 'None' not in light_curve_data.features:
             feature_data.append(light_curve_data.get_features_to_write())
     features_df = pd.DataFrame(feature_data, columns=header)
-    save_features(features_df, location="filesystem", filename=features_file)
+    save_features(features_df, location=save_location, filename=features_file, feature_extractor=feature_extractor)
 
 
 def _plasticc_sample_fit(

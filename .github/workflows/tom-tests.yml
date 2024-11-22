@@ -33,9 +33,20 @@ jobs:
       env:
         TOM_DESC_DIR: ../tom_desc
       run: |
-        docker compose up -d resspect
+        docker compose up -d shell resspect 
     
-    - name: Run a command
+    - name: Load the TOM Database 
       working-directory: resspect
       run: |
-        docker compose exec -it resspect /bin/bash -c "echo hello world"
+        docker compose exec -it shell /bin/bash -c "PGPASSWORD=fragile pg_restore --data-only -h postgres -U postgres -d tom_desc /tests/elasticc2_alertcycle_complete.psqlc"
+
+    - name: Run one night of processing
+      working-directory: resspect
+      run: |
+        docker compose exec -it resspect /bin/bash -c "python3 /resspect/resspect-src/src/resspect/scripts/run_one_night.py"
+
+    - name: Check the night of processing worked
+      working-directory: resspect
+      run: |
+        docker compose exec -it resspect /bin/bash -c "python3 /resspect/resspect-src/src/resspect/scripts/test_tom_received_requests.py"
+    

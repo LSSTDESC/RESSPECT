@@ -153,3 +153,12 @@ auxiliary_files/cosmo.hpp
 
 # Location for secrets used to log into TOM in a dev envornoment
 secrets/
+
+# Example work dir with an initial training dataset used in automated tests
+example_work_dir/data/*
+example_work_dir/plots/*
+example_work_dir/results/*
+example_work_dir/TOM_days_storage/*
+!example_work_dir/TOM_days_storage/TOM_test_features
+!example_work_dir/TOM_days_storage/TOM_training_features
+!example_work_dir/TOM_days_storage/TOM_validation_features

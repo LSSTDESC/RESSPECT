@@ -5,12 +5,13 @@ services:
     tty: true
     container_name: resspect
     build: ./
-    ports:
-      - "8081:8081"
     volumes:
       - type: bind
         source: ./
         target: /resspect/resspect-src
+      - type: bind
+        source: ./example_work_dir
+        target: /resspect/resspect-work
       - type: bind
         source: ./secrets
         target: /secrets
@@ -22,3 +23,6 @@ services:
       - DB_HOST=resspectdb
       - DB_PORT=5432
       - DB_NAME=resspectdb
+      - TOM_USERNAME=root
+      - TOM_PASSWORDFILE=/resspect/passwordfile.txt
+      - TOM_URL=http://tom:8080

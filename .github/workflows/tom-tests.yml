@@ -20,7 +20,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: LSSTDESC/tom_desc
-        ref: resspect_connect
         path: tom_desc
         submodules: 'recursive'
     
@@ -39,7 +38,7 @@ jobs:
     - name: Load the TOM Database 
       working-directory: resspect
       run: |
-        docker compose exec -it shell /bin/bash -c "PGPASSWORD=fragile pg_restore --data-only -h postgres -U postgres -d tom_desc /tests/elasticc2_alertcycle_complete.psqlc"
+        docker compose exec -it shell /bin/bash -c "PGPASSWORD=fragile pg_restore --create -h postgres -U postgres -d tom_desc /tests/elasticc2_alertcycle_complete.psqlc"
 
     - name: Run one night of processing
       working-directory: resspect

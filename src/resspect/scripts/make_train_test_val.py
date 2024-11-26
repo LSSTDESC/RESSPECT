@@ -1,3 +1,6 @@
+# This script was used to generate the TOM_*_features files in example_work_dir/TOM_days_storage
+# that serve as the initial training data for run_one_night.py in github actions
+
 import resspect
 import pandas as pd
 from resspect import request_TOM_data

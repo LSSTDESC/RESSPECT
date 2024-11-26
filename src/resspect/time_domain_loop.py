@@ -712,9 +712,6 @@ def submit_queries_to_TOM(url, username, passwordfile, objectids: list, prioriti
             'objectids': objectids,
             'priorities': priorities}
     res = tom.request( 'POST', 'elasticc2/askforspectrum', json=req )
-    print(res)
-    print(res.status_code)
-    print(res.text)
     dic = res.json()
     if res.status_code != 200:
         raise ValueError('Request failed, ' + res.text + ". Status code: " + str(res.status_code))

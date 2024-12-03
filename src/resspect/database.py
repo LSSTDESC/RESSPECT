@@ -1298,8 +1298,8 @@ class DataBase:
             obj = query_indx[0]
             print(f"Beginning of loop:")
             print(f"obj: {obj}")
-            print(f"self.pool_features: {self.pool_features}")
             print(f"query_indx: {query_indx}")
+            print(f"self.pool_labels: {self.pool_labels}")
 
             # add object to the query sample
             query_header0 = self.pool_metadata.values[obj]

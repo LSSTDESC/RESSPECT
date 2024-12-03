@@ -1269,6 +1269,13 @@ class DataBase:
             If True, display debug comments on screen.
             Default is False.
         """
+
+        print("Called update_samples")
+        print(f"self: {self}")
+        print(f"self.pool_features: {self.pool_features}")
+        print(f"query_indx: {query_indx}")
+        
+
         id_name = self.identify_keywords()
 
         ### keep track of number evolution ####
@@ -1290,6 +1297,7 @@ class DataBase:
 
             # identify queried object index
             obj = query_indx[0]
+            print(f"obj: {obj}")
 
             # add object to the query sample
             query_header0 = self.pool_metadata.values[obj]

@@ -1246,7 +1246,7 @@ class DataBase:
         return query_indx
 
     def update_samples(self, query_indx: list, epoch=20,
-                       queryable=False, screen=False, alternative_label=False):
+                       queryable=False, screen=True, alternative_label=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1274,7 +1274,6 @@ class DataBase:
         print(f"self: {self}")
         print(f"self.pool_features: {self.pool_features}")
         print(f"query_indx: {query_indx}")
-        
 
         id_name = self.identify_keywords()
 
@@ -1297,7 +1296,10 @@ class DataBase:
 
             # identify queried object index
             obj = query_indx[0]
+            print(f"Beginning of loop:")
             print(f"obj: {obj}")
+            print(f"self.pool_features: {self.pool_features}")
+            print(f"query_indx: {query_indx}")
 
             # add object to the query sample
             query_header0 = self.pool_metadata.values[obj]

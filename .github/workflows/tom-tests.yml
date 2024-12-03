@@ -36,32 +36,6 @@ jobs:
       run: |
         docker compose up -d shell resspect 
 
-    - name: Do Migrations
-      working-directory: resspect
-      run: |
-        docker compose exec -it createdb /bin/bash -c "python tom_desc/manage.py migrate"
-
-    - name: Create test superuser
-      working-directory: resspect
-      run: |
-        docker compose exec -it createdb /bin/bash -c "python tom_desc/manage.py create_test_superuser"
-    
-    - name: Create test api broker
-      working-directory: resspect
-      run: |
-        docker compose exec -it createdb /bin/bash -c "python tom_desc/manage.py create_test_apibroker"
-
-    - name: Create Postgres RO user
-      working-directory: resspect
-      run: |
-        docker compose exec -it createdb /bin/bash -c "python /tests/create_postgres_ro_user.py"
-
-    - name: Setup Mongodb
-      working-directory: resspect
-      run: |
-        docker compose exec -it createdb /bin/bash -c "python /tests/setup_mongodb.py"
-    
-
     - name: Load the TOM Database 
       working-directory: resspect
       run: |

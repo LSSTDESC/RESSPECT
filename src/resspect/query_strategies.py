@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['certainy_sampling',
+__all__ = ['certainty_sampling',
            'uncertainty_sampling',
            'random_sampling',
            'uncertainty_sampling_entropy',

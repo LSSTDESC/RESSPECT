@@ -180,7 +180,16 @@ def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
     first_loop_data.pool_features = first_loop_data.pool_features[
         ~repeated_id_flags]
     pool_labels = (
-            first_loop_data.pool_metadata['type'].values == pool_labels_class)
+
+
+        #! #############################################################
+        #! GREAT BIG WARNING - This MUST be fixed!!!
+        #! 'sntype' should be dynamically pulled from the feature_extractor.label
+        #! class attribute - NOT HARDCODED!!!!!!
+        #! #############################################################
+            first_loop_data.pool_metadata['sntype'].values == pool_labels_class)
+
+
     first_loop_data.pool_labels = pool_labels.astype(int)
     light_curve_data.pool_features = first_loop_data.pool_features
     light_curve_data.pool_metadata = first_loop_data.pool_metadata

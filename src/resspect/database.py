@@ -454,6 +454,8 @@ class DataBase:
             id_name = 'id'
         elif 'objid' in self.metadata_names:
             id_name = 'objid'
+        elif 'objectid' in self.metadata_names:
+            id_name = 'objectid'
         else:
             logger.warning('No object identification found in metadata - using first column as object identification!')
             id_name = self.metadata_names[0]
@@ -1261,7 +1263,7 @@ class DataBase:
         nquery = len(q2)
 
         data_copy = self.pool_metadata.copy()
-        query_ids = [data_copy['id'].values[item] for item in query_indx]
+        query_ids = [data_copy['objectid'].values[item] for item in query_indx]
 
         while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
 
@@ -1389,23 +1391,23 @@ class DataBase:
             raise ValueError('Wrong dimensionality for test/val samples.')
 
         for name in query_ids:
-            if name in self.pool_metadata['id'].values:
+            if name in self.pool_metadata['objectid'].values:
                 raise ValueError('Queried object ', name, ' is still in pool sample!')
 
-            if name not in self.train_metadata['id'].values:
+            if name not in self.train_metadata['objectid'].values:
                 raise ValueError('Queried object ', name, ' not in training!')
 
         # check if there are repeated ids
-        for name in self.train_metadata['id'].values:
-            if name in self.pool_metadata['id'].values:
+        for name in self.train_metadata['objectid'].values:
+            if name in self.pool_metadata['objectid'].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in pool and training samples!')
 
-            if name in self.test_metadata['id'].values:
+            if name in self.test_metadata['objectid'].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in test and training samples!')
 
-            if name in self.validation_metadata['id'].values:
+            if name in self.validation_metadata['objectid'].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in validation and training samples!')
 

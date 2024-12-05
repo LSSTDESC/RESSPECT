@@ -635,10 +635,10 @@ def _update_light_curve_data_for_next_epoch(
     if is_queryable:
         queryable_flag = light_curve_data.pool_metadata['queryable'].values
         light_curve_data.queryable_ids = light_curve_data.pool_metadata[
-            'id'].values[queryable_flag]
+            'objectid'].values[queryable_flag]
     else:
         light_curve_data.queryable_ids = light_curve_data.pool_metadata[
-            'id'].values
+            'objectid'].values
     return light_curve_data
 
 

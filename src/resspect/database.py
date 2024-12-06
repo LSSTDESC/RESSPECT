@@ -14,6 +14,8 @@ import os
 import pandas as pd
 import tarfile
 
+from watchpoints import watch
+
 from resspect.classifiers import *
 from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY
 from resspect.query_strategies import *
@@ -192,6 +194,24 @@ class DataBase:
         self.pool_features = np.array([])
         self.pool_metadata = pd.DataFrame()
         self.pool_labels = np.array([])
+
+        def trigger(obj):
+            return isinstance(obj, pd.DataFrame)
+        
+        def my_cmp(obj,other):
+            try:
+                if isinstance(obj, pd.DataFrame):
+                    return not obj.equals(other)
+                else:
+                    equality = obj.__eq__(other)
+                    if isinstance(equality, bool):
+                        return not equality
+                    else:
+                        return not all(equality)
+            except ValueError: # ex: operands could not be broadcast together... they are different
+                return True
+    
+        watch(self.pool_labels, cmp = my_cmp, when=trigger)
         self.predicted_class = np.array([])
         self.queried_sample = []
         self.queryable_ids = np.array([])

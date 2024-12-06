@@ -69,6 +69,11 @@ RUN touch /resspect/passwordfile.txt && echo "testing" > /resspect/passwordfile.
 # Create a sample work dir mount point
 RUN mkdir -p ${RESSPECT_WORK}
 
+# We require a results directory, RESSPECT doesn't reliably create one before writing into it.
+# Note that in the compose environment ${RESSPECT_WORK} is bind-mounted, so see the git location
+# of that bind mount (example_work_dir) for the template.
+RUN mkdir -p ${RESSPECT_WORK}/results
+
 # Ensure commands run in the container by default have a cwd of the RESSPECT_WORK dir.
 RUN echo "cd ${RESSPECT_WORK}" >> /root/.bashrc
 

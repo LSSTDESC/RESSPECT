@@ -8,6 +8,7 @@ from resspect.query_strategies import (
     qbd_entropy,
     qbd_mi,
     random_sampling,
+    certainty_sampling,
     uncertainty_sampling,
     uncertainty_sampling_entropy,
     uncertainty_sampling_least_confident,
@@ -29,6 +30,30 @@ def test_random_sampling(batch_size, queryable):
     if queryable:
         assert np.all(np.array(sample) % 3 == 0)
 
+
+def test_certainty_sampling():
+    """Test the certainty sampling functionality."""
+    test_ids = np.arange(0, 10)
+    queryable_ids = np.array([0, 1, 2, 3, 4, 7, 8, 9])  # No 5 or 6
+    #given that most anomalous = 1.0
+    class1_probs = np.array([
+        0.01,  # 0 - normal
+        0.50,  # 1 - low certainty
+        0.10,  # 2 - pretty normal
+        0.20,  # 3 - pretty normal
+        0.65,  # 4 - low certainty
+        0.79,  # 5 - low certainty (not queryable)
+        0.25,  # 6 - normal
+        0.80,  # 7 - anomalous
+        0.40,  # 8 - low certainty
+        0.02,  # 9 - very normal
+    ])
+    class_probs = np.array([class1_probs, class1_probs]).T
+
+    # Test that we generate the correct number of samples.
+    sample = certainty_sampling(class_probs, test_ids, queryable_ids, batch=3)
+    assert len(sample) == 3
+    assert np.array_equal(sample, [7, 4, 1])
 
 def test_uncertainty_sampling():
     """Test the uncertainity sampling functionality."""

@@ -196,7 +196,7 @@ class DataBase:
         self.pool_labels = np.array([])
 
         def trigger(obj):
-            return isinstance(obj, pd.DataFrame)
+            return isinstance(obj, pd.Series)
         
         def my_cmp(obj,other):
             try:
@@ -1319,6 +1319,7 @@ class DataBase:
             print(f"Beginning of loop:")
             print(f"obj: {obj}")
             print(f"query_indx: {query_indx}")
+            print(f"type(self.pool_labels): {type(self.pool_labels)}")
             print(f"self.pool_labels: {self.pool_labels}")
 
             # add object to the query sample

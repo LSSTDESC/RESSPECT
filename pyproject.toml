@@ -32,6 +32,7 @@ dependencies = [
     "requests",
     "pooch",
     "platformdirs",
+    "watchpoints",
 ]
 
 [project.urls]

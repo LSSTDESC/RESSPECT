@@ -391,6 +391,7 @@ def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = No
         dic['mjd_now'] = mjdnow
     if cheat_gentypes is not None:
         dic['cheat_gentypes'] = cheat_gentypes
+    dic['include_hostinfo'] = True
     res = tom.post('elasticc2/gethottransients', json = dic)
     data_dic = res.json()
     return data_dic

@@ -189,6 +189,8 @@ class DataBase:
         self.feature_extractor_class = None
         self.features = pd.DataFrame([])
         self.features_names = []
+        self.id_name = None
+        self.label_name = None
         self.metadata = pd.DataFrame()
         self.metadata_names = []
         self.metrics_list_names = []
@@ -449,16 +451,41 @@ class DataBase:
         id_name: str
             String of object identification.
         """
+        if self.id_name is None:
 
-        if 'id' in self.metadata_names:
-            id_name = 'id'
-        elif 'objid' in self.metadata_names:
-            id_name = 'objid'
-        else:
-            logger.warning('No object identification found in metadata - using first column as object identification!')
-            id_name = self.metadata_names[0]
+            if self.feature_extractor_class:
+                self.id_name = self.feature_extractor_class.id_column
+            elif 'id' in self.metadata_names:
+                self.id_name = 'id'
+            elif 'objid' in self.metadata_names:
+                self.id_name = 'objid'
+            elif 'objectid' in self.metadata_names:
+                self.id_name = 'objectid'
+            else:
+                logger.warning('No object identification found in metadata - using first column as object identification!')
+                self.id_name = self.metadata_names[0]
 
-        return id_name
+        return self.id_name
+
+    def identfy_labels(self):
+        """Return the most logical column name for the data label column.
+        If self.label_name is already defined, this will pass through without
+        recalculating the label name.
+
+        Returns
+        -------
+        str
+            The string of the label column name.
+        """
+        if self.label_name is None:
+            if self.feature_extractor_class:
+                self.label_name = self.feature_extractor_class.label_column
+            elif 'type' in self.metadata_names:
+                self.label_name = 'type'
+            elif 'sntype' in self.metadata_names:
+                self.label_name = 'sntype'
+
+        return self.label_name
 
     def build_orig_samples(self, nclass=2, screen=False, queryable=False,
                            sep_files=False):
@@ -1261,7 +1288,7 @@ class DataBase:
         nquery = len(q2)
 
         data_copy = self.pool_metadata.copy()
-        query_ids = [data_copy['id'].values[item] for item in query_indx]
+        query_ids = [data_copy[id_name].values[item] for item in query_indx]
 
         while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
 
@@ -1389,23 +1416,23 @@ class DataBase:
             raise ValueError('Wrong dimensionality for test/val samples.')
 
         for name in query_ids:
-            if name in self.pool_metadata['id'].values:
+            if name in self.pool_metadata[id_name].values:
                 raise ValueError('Queried object ', name, ' is still in pool sample!')
 
-            if name not in self.train_metadata['id'].values:
+            if name not in self.train_metadata[id_name].values:
                 raise ValueError('Queried object ', name, ' not in training!')
 
         # check if there are repeated ids
-        for name in self.train_metadata['id'].values:
-            if name in self.pool_metadata['id'].values:
+        for name in self.train_metadata[id_name].values:
+            if name in self.pool_metadata[id_name].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in pool and training samples!')
 
-            if name in self.test_metadata['id'].values:
+            if name in self.test_metadata[id_name].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in test and training samples!')
 
-            if name in self.validation_metadata['id'].values:
+            if name in self.validation_metadata[id_name].values:
                 raise ValueError('After update! Object ', name,
                                  ' found in validation and training samples!')
 

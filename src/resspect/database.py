@@ -15,6 +15,8 @@ import os
 import pandas as pd
 import tarfile
 
+from watchpoints import watch
+
 from resspect.classifiers import *
 from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY
 from resspect.query_strategies import *
@@ -196,6 +198,24 @@ class DataBase:
         self.pool_features = np.array([])
         self.pool_metadata = pd.DataFrame()
         self.pool_labels = np.array([])
+
+        def trigger(obj):
+            return isinstance(obj, pd.Series)
+        
+        def my_cmp(obj,other):
+            try:
+                if isinstance(obj, pd.DataFrame):
+                    return not obj.equals(other)
+                else:
+                    equality = obj.__eq__(other)
+                    if isinstance(equality, bool):
+                        return not equality
+                    else:
+                        return not all(equality)
+            except ValueError: # ex: operands could not be broadcast together... they are different
+                return True
+    
+        watch(self.pool_labels, cmp = my_cmp, when=trigger)
         self.predicted_class = np.array([])
         self.queried_sample = []
         self.queryable_ids = np.array([])
@@ -1226,7 +1246,7 @@ class DataBase:
         return query_indx
 
     def update_samples(self, query_indx: list, epoch=20,
-                       queryable=False, screen=False, alternative_label=False):
+                       queryable=False, screen=True, alternative_label=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1249,6 +1269,12 @@ class DataBase:
             If True, display debug comments on screen.
             Default is False.
         """
+
+        print("Called update_samples")
+        print(f"self: {self}")
+        print(f"self.pool_features: {self.pool_features}")
+        print(f"query_indx: {query_indx}")
+
         id_name = self.identify_keywords()
 
         ### keep track of number evolution ####
@@ -1270,6 +1296,11 @@ class DataBase:
 
             # identify queried object index
             obj = query_indx[0]
+            print(f"Beginning of loop:")
+            print(f"obj: {obj}")
+            print(f"query_indx: {query_indx}")
+            print(f"type(self.pool_labels): {type(self.pool_labels)}")
+            print(f"self.pool_labels: {self.pool_labels}")
 
             # add object to the query sample
             query_header0 = self.pool_metadata.values[obj]

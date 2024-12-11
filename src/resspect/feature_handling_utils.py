@@ -33,7 +33,6 @@ def load_external_features(
                     data = pd.read_csv(io.BytesIO(content))
             else:
                 data = pd.read_csv(filename, index_col=False)
-                print(data.keys()[0])
                 if "Unnamed" not in data.keys()[0] and " " in data.keys()[0]:
                     data = pd.read_csv(filename, sep=' ', index_col=False)
         else:

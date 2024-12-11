@@ -491,15 +491,15 @@ class DataBase:
             # get samples labels in a separate object
             if self.train_metadata.shape[0] > 0:
                 train_labels = self.train_metadata[label_column].isin(non_anomaly_classes)
-                self.train_labels = train_labels.astype(int)
+                self.train_labels = train_labels.to_numpy(dtype=int)
 
             if self.test_metadata.shape[0] > 0:
                 test_labels = self.test_metadata[label_column].isin(non_anomaly_classes)
-                self.test_labels = test_labels.astype(int)
+                self.test_labels = test_labels.to_numpy(dtype=int)
 
             if self.validation_metadata.shape[0] > 0:
                 validation_labels = self.validation_metadata[label_column].isin(non_anomaly_classes)
-                self.validation_labels = validation_labels.astype(int)
+                self.validation_labels = validation_labels.to_numpy(dtype=int)
 
             if self.pool_metadata.shape[0] > 0:
                 pool_labels = self.pool_metadata[label_column].isin(non_anomaly_classes)

@@ -503,7 +503,7 @@ class DataBase:
 
             if self.pool_metadata.shape[0] > 0:
                 pool_labels = self.pool_metadata[label_column].isin(non_anomaly_classes)
-                self.pool_labels = pool_labels.astype(int)
+                self.pool_labels = pool_labels.to_numpy(dtype=int)
 
             # identify asked to consider queryable flag
             if queryable and len(self.pool_metadata) > 0:

@@ -1432,7 +1432,7 @@ class DataBase:
 
         # add header to metrics file
         if not os.path.exists(output_metrics_file) or loop == 0:
-            with open(output_metrics_file, 'w') as metrics:
+            with open(output_metrics_file, 'w+') as metrics:
                 metrics.write('loop,')
                 for name in self.metrics_list_names:
                     metrics.write(name + ',')
@@ -1446,7 +1446,7 @@ class DataBase:
             flag = queried_sample[:,0].astype(int) == epoch
 
             if sum(flag) > 0:
-                with open(output_metrics_file, 'a') as metrics:
+                with open(output_metrics_file, 'a+') as metrics:
                     metrics.write(str(epoch) + ',')
                     for value in self.metrics_list_values:
                         metrics.write(str(value) + ',')
@@ -1485,14 +1485,14 @@ class DataBase:
                 if not os.path.exists(queried_sample_file) or loop == 0:
                     # add header to query sample file
                     full_header = self.metadata_names + self.features_names
-                    with open(queried_sample_file, 'w') as query:
+                    with open(queried_sample_file, 'w+') as query:
                         query.write('day,')
                         for item in full_header:
                             query.write(item + ',')
                         query.write('\n')
 
                 # save query sample to file
-                with open(queried_sample_file, 'a') as query:
+                with open(queried_sample_file, 'a+') as query:
                     for batch in range(batch):
                         for elem in queried_sample[flag][batch]:
                             query.write(str(elem) + ',')

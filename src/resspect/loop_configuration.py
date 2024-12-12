@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from os import path
 
-from resspect import VALID_STRATEGIES, BaseConfiguration
+from resspect import BaseConfiguration
+from resspect.query_strategies import QUERY_STRATEGY_REGISTRY
 
 @dataclass
 class LoopConfiguration(BaseConfiguration):
@@ -148,7 +149,7 @@ class LoopConfiguration(BaseConfiguration):
                 raise ValueError("provided `pred_dir` does not exist/is not a directory.")
 
         # check strategy
-        if self.strategy not in VALID_STRATEGIES:
+        if self.strategy not in QUERY_STRATEGY_REGISTRY:
             raise ValueError(f"{self.strategy} is not a valid strategy.")
         if "QBD" in self.strategy and not self.classifier_bootstrap:
             raise ValueError("Bootstrap must be true when using disagreement strategy")

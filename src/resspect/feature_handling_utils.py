@@ -25,9 +25,10 @@ def save_features(
         else:
             raise ValueError("filename must be provided if saving to the filesystem.")
     elif location == "mongodb":
-        # temporary local fix obviously
-        with open("/Users/maxwest/homework/mongodb_test.pass") as f:
-            MONGO_URI = f.readline().strip("\n")
+        if "MONGO_URI" in os.environ.keys():
+            MONGO_URI = os.environ["MONGO_URI"]
+        else:
+            raise ValueError("Couldn't find $MONGO_URI in envorinment variables.")
         client = MongoClient(MONGO_URI)
         db = client[MONGODB_NAME]
         collection = db[MONGO_COLLECTION_NAMES[feature_extractor]]
@@ -63,8 +64,10 @@ def load_external_features(
         else:
             raise ValueError("filename must be provided if reading from the filesystem.")
     elif location == "mongodb":
-        with open("/Users/maxwest/homework/mongodb_test.pass") as f:
-            MONGO_URI = f.readline().strip("\n")
+        if "MONGO_URI" in os.environ.keys():
+            MONGO_URI = os.environ["MONGO_URI"]
+        else:
+            raise ValueError("Couldn't find $MONGO_URI in envorinment variables.")
         client = MongoClient(MONGO_URI)
         db = client[MONGODB_NAME]
         collection = db[MONGO_COLLECTION_NAMES[feature_extractor]]

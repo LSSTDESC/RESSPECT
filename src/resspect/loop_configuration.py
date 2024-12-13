@@ -20,6 +20,9 @@ class LoopConfiguration(BaseConfiguration):
         if dict, keywords should be 'train' and 'test',
         and values must contain the path for separate train
         and test sample files.
+    features_query: dict
+        If a feature query is provided (in MongoDB query format), RESSPECT
+        will attempt to get the information from a provided MongoDB instance.
     output_metrics_file: str
         Full path to output file to store metric values of each loop.
     output_queried_file: str

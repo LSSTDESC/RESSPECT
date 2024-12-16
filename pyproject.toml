@@ -32,6 +32,8 @@ dependencies = [
     "requests",
     "pooch",
     "platformdirs",
+    "pymongo",
+    "mongomock",
 ]
 
 [project.urls]

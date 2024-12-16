@@ -2,12 +2,14 @@ import io
 import logging
 import os
 import pandas as pd
-from pymongo.mongo_client import MongoClient
+import pymongo
 
 MONGODB_NAME = "resspect_db_test"
 
 MONGO_COLLECTION_NAMES = {
-    "Bump": "resspect_bump"
+    "Bump": "resspect_bump",
+    "Bazin": "resspect_bazin",
+    "Malanchev": "resspect_malanchev"
 }
 import tarfile
 
@@ -29,11 +31,11 @@ def save_features(
             MONGO_URI = os.environ["MONGO_URI"]
         else:
             raise ValueError("Couldn't find $MONGO_URI in envorinment variables.")
-        client = MongoClient(MONGO_URI)
+        client = pymongo.MongoClient(MONGO_URI)
         db = client[MONGODB_NAME]
         collection = db[MONGO_COLLECTION_NAMES[feature_extractor]]
         data_dicts = [data.loc[i].to_dict() for i in range(len(data))]
-        collection.insert_many(data_dicts)
+        _ = collection.insert_many(data_dicts)
         logging.info(
             "Features have been saved to MongoDB collection: %s",
             MONGO_COLLECTION_NAMES[feature_extractor]
@@ -68,7 +70,7 @@ def load_external_features(
             MONGO_URI = os.environ["MONGO_URI"]
         else:
             raise ValueError("Couldn't find $MONGO_URI in envorinment variables.")
-        client = MongoClient(MONGO_URI)
+        client = pymongo.MongoClient(MONGO_URI)
         db = client[MONGODB_NAME]
         collection = db[MONGO_COLLECTION_NAMES[feature_extractor]]
 

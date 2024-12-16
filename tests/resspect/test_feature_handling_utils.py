@@ -51,6 +51,7 @@ def test_save_load_from_mongodb():
             feature_extractor="Malanchev",
         )
 
+        # test getting all data from collection
         test_df = load_external_features(
             mongo_query={},
             location="mongodb",
@@ -59,4 +60,14 @@ def test_save_load_from_mongodb():
 
         assert len(test_df) == 51
         # column number goes up by one when we save to mongo (mongo object id)
+        assert len(test_df.columns) == 58
+
+        # test with actual query
+        test2_df = load_external_features(
+            mongo_query={ "type": "II" },
+            location="mongodb",
+            feature_extractor="Malanchev",
+        )
+
+        assert len(test2_df) == 32
         assert len(test_df.columns) == 58

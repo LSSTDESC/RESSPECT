@@ -17,9 +17,6 @@ class TimeDomainConfiguration(BaseConfiguration):
         Full path to output file to store the queried sample.
     path_to_features_dir: str
         Complete path to directory holding features files for all days.
-    features_query: dict
-        If a feature query is provided (in MongoDB query format), RESSPECT
-        will attempt to get the information from a provided MongoDB instance.
     strategy: str
         Query strategy. Options are (all can be run with budget):
         "UncSampling",
@@ -93,8 +90,7 @@ class TimeDomainConfiguration(BaseConfiguration):
     strategy: str
     fname_pattern: list
     path_to_ini_files: dict
-    path_to_features_dir: str = None
-    features_query: dict = None
+    path_to_features_dir: str
     batch: int = 1
     canonical: bool = False
     classifier: str = "RandomForest"
@@ -114,12 +110,8 @@ class TimeDomainConfiguration(BaseConfiguration):
 
     def __post_init__(self):
         # file checking
-        if self.path_to_features_dir is not None:
-            if not path.isdir(self.path_to_features_dir):
-                raise ValueError("`path_to_features` must be an existing directory.")
-        else:
-            if self.features_query is None:
-                raise ValueError("Must provide either features dir or MongoDB query.")
+        if not path.isdir(self.path_to_features_dir):
+            raise ValueError("`path_to_features` must be an existing directory.")
 
         # check strategy
         if self.strategy not in VALID_STRATEGIES:

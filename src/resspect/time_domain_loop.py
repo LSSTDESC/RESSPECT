@@ -91,7 +91,7 @@ def _load_first_loop_and_full_data(
             file_names_dict=light_curve_file_name,
             config=config,
         )
-    elif config.features_query is None:
+    else:
         first_loop_file_name = {'pool': first_loop_file_name}
         first_loop_data = load_dataset(
             file_names_dict=first_loop_file_name,
@@ -103,12 +103,6 @@ def _load_first_loop_and_full_data(
             config=config,
             samples_list=['train', 'test', 'validation'],
             is_load_build_samples=False,
-        )
-    else:
-        load_dataset(
-            file_names_dict=None,
-            config=config,
-            samples_list=[],
         )
     return first_loop_data, light_curve_data
 

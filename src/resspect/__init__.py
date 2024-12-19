@@ -9,16 +9,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VALID_STRATEGIES = [
-    "UncSampling",
-    "RandomSampling",
-    "UncSamplingEntropy",
-    "UncSamplingLeastConfident",
-    "UncSamplingMargin",
-    "QBDMI",
-    "QBDEntropy",
-]
-
 from .base_configuration import *
 from .bazin import *
 from .build_plasticc_canonical import *

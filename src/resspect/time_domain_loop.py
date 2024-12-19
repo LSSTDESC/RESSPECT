@@ -155,7 +155,6 @@ def _update_light_curve_data_val_and_test_data(
 
 def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
                                         light_curve_data: DataBase,
-                                        id_key_name: str,
                                         pool_labels_class: str = 'Ia') -> Tuple[
         DataBase, DataBase]:
     """
@@ -172,6 +171,8 @@ def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
     pool_labels_class
         pool labels class name
     """
+    id_key_name = first_loop_data.identify_keywords()
+    label_key_name = first_loop_data.identfy_labels()
     repeated_id_flags = np.in1d(
         first_loop_data.pool_metadata[id_key_name].values,
         light_curve_data.train_metadata[id_key_name].values)
@@ -180,7 +181,7 @@ def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
     first_loop_data.pool_features = first_loop_data.pool_features[
         ~repeated_id_flags]
     pool_labels = (
-            first_loop_data.pool_metadata['type'].values == pool_labels_class)
+            first_loop_data.pool_metadata[label_key_name].values == pool_labels_class)
     first_loop_data.pool_labels = pool_labels.astype(int)
     light_curve_data.pool_features = first_loop_data.pool_features
     light_curve_data.pool_metadata = first_loop_data.pool_metadata
@@ -607,6 +608,8 @@ def _update_light_curve_data_for_next_epoch(
         If True, consider samples separately read
         from independent files. Default is False.
     """
+    id_key_name = light_curve_data.identify_keywords()
+
     light_curve_data.pool_metadata = next_day_data.pool_metadata
     light_curve_data.pool_features = next_day_data.pool_features
     light_curve_data.pool_labels = next_day_data.pool_labels
@@ -626,10 +629,10 @@ def _update_light_curve_data_for_next_epoch(
     if is_queryable:
         queryable_flag = light_curve_data.pool_metadata['queryable'].values
         light_curve_data.queryable_ids = light_curve_data.pool_metadata[
-            'id'].values[queryable_flag]
+            id_key_name].values[queryable_flag]
     else:
         light_curve_data.queryable_ids = light_curve_data.pool_metadata[
-            'id'].values
+            id_key_name].values
     return light_curve_data
 
 
@@ -826,7 +829,7 @@ def time_domain_loop(config, **kwargs):
     light_curve_train_ids = light_curve_data.train_metadata[id_key_name].values
 
     first_loop_data, light_curve_data = _update_data_by_remove_repeated_ids(
-        first_loop_data, light_curve_data, id_key_name
+        first_loop_data, light_curve_data
     )
     light_curve_data = _update_light_curve_data_val_and_test_data(
         light_curve_data,

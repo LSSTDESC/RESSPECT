@@ -61,9 +61,13 @@ def _snpcc_sample_fit(
 
 
 def fit_snpcc(
-        path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-        feature_extractor: str = 'Bazin'):
+        path_to_data_dir: str,
+        features_file: str = None,
+        save_location: str = "filesystem",
+        file_prefix: str = "DES_SN",
+        number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
+        feature_extractor: str = 'Bazin'
+    ):
     """
     Perform fit to all objects in the SNPCC data.
 
@@ -102,7 +106,12 @@ def fit_snpcc(
         if 'None' not in light_curve_data.features:
             feature_data.append(light_curve_data.get_features_to_write())
     features_df = pd.DataFrame(feature_data, columns=header)
-    save_features(features_df, location="filesystem", filename=features_file)
+    save_features(
+        features_df,
+        location=save_location,
+        filename=features_file,
+        feature_extractor=feature_extractor
+    )
 
 
 def _plasticc_sample_fit(
@@ -139,10 +148,15 @@ def _plasticc_sample_fit(
     return light_curve_data_copy
 
 
-def fit_plasticc(path_photo_file: str, path_header_file: str,
-                 output_file: str, sample='train',
-                 feature_extractor: str = "Bazin",
-                 number_of_processors: int = MAX_NUMBER_OF_PROCESSES):
+def fit_plasticc(
+    path_photo_file: str,
+    path_header_file: str,
+    output_file: str = None,
+    save_location: str = "filesystem",
+    sample='train',
+    feature_extractor: str = "Bazin",
+    number_of_processors: int = MAX_NUMBER_OF_PROCESSES
+):
     """
     Perform fit to all objects in a given PLAsTiCC data file.
     Parameters
@@ -195,7 +209,12 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
         if 'None' not in light_curve_data.features:
             feature_data.append(light_curve_data.get_features_to_write())
     features_df = pd.DataFrame(feature_data, header=PLASTICC_RESSPECT_FEATURES_HEADER)
-    save_features(features_df, location="filesystem", filename=output_file)
+    save_features(
+        features_df,
+        location=save_location,
+        filename=output_file,
+        feature_extractor=feature_extractor
+    )
 
 def _TOM_sample_fit(
         obj_dic: dict, feature_extractor: str):
@@ -224,9 +243,13 @@ def _TOM_sample_fit(
     
     return light_curve_data
 
-def fit_TOM(data_dic: dict, output_features_file: str,
-            number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-            feature_extractor: str = 'Bazin'):
+def fit_TOM(
+    data_dic: dict,
+    output_features_file: str = None,
+    save_location: str = "filesystem",
+    number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
+    feature_extractor: str = 'Bazin'
+):
     """
     Perform fit to all objects from the TOM data.
 
@@ -258,7 +281,12 @@ def fit_TOM(data_dic: dict, output_features_file: str,
         if 'None' not in light_curve_data.features:
             feature_data.append(light_curve_data.get_features_to_write())
     features_df = pd.DataFrame(feature_data, columns=header)
-    save_features(features_df, location="filesystem", filename=output_features_file)
+    save_features(
+        features_df,
+        location=save_location,
+        filename=output_features_file,
+        feature_extractor=feature_extractor
+    )
 
 def _sample_fit(
         obj_dic: dict, feature_extractor: str, filters: list, type: str, one_code: list,
@@ -295,7 +323,8 @@ def _sample_fit(
 
 def fit(
         data_dic: dict,
-        output_features_file: str,
+        output_features_file: str = None,
+        save_location: str = "filesystem",
         number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
         feature_extractor: str = 'Bazin',
         filters: Union[str, List[str]] = 'SNPCC',
@@ -375,7 +404,12 @@ def fit(
                 feature_data.append(light_curve_data.get_features_to_write())
 
     features_df = pd.DataFrame(feature_data, columns=header)
-    save_features(features_df, location="filesystem", filename=output_features_file)
+    save_features(
+        features_df,
+        location=save_location,
+        filename=output_features_file,
+        feature_extractor=feature_extractor,
+    )
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 

@@ -88,10 +88,10 @@ class TimeDomainConfiguration(BaseConfiguration):
     days: list
     output_metrics_file: str
     output_queried_file: str
-    path_to_features_dir: str
     strategy: str
     fname_pattern: list
     path_to_ini_files: dict
+    path_to_features_dir: str
     batch: int = 1
     canonical: bool = False
     classifier: str = "RandomForest"

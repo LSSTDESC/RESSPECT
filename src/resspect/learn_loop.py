@@ -33,25 +33,33 @@ def load_features(database_class: DataBase, config: LoopConfiguration) -> DataBa
     config: `resspect.loop_configuration.LoopConfiguration`
         The configuration elements of the learn loop.
     """
-    if isinstance(config.path_to_features, str):
-        database_class.load_features(
-            path_to_file=config.path_to_features,
-            feature_extractor=config.features_method,
-            survey=config.survey
-        )
+    if config.path_to_features is not None:
+        if isinstance(config.path_to_features, str):
+            database_class.load_features(
+                path_to_file=config.path_to_features,
+                feature_extractor=config.features_method,
+                survey=config.survey,
+            )
+        else:
+            features_set_names = ['train', 'test', 'validation', 'pool']
+            for sample_name in features_set_names:
+                if sample_name in config.path_to_features.keys():
+                    database_class.load_features(
+                        config.path_to_features[sample_name],
+                        feature_extractor=config.features_method,
+                        survey=config.survey,
+                        sample=sample_name
+                    )
+                else:
+                    logging.warning(f'Path to {sample_name} not given.'
+                                    f' Proceeding without this sample')
     else:
-        features_set_names = ['train', 'test', 'validation', 'pool']
-        for sample_name in features_set_names:
-            if sample_name in config.path_to_features.keys():
-                database_class.load_features(
-                    config.path_to_features[sample_name],
-                    feature_extractor=config.features_method,
-                    survey=config.survey,
-                    sample=sample_name
-                )
-            else:
-                logging.warning(f'Path to {sample_name} not given.'
-                                f' Proceeding without this sample')
+        database_class.load_features(
+            mongo_query=config.features_query,
+            feature_extractor=config.features_method,
+            survey=config.survey,
+            location="mongodb",
+        )
 
     database_class.build_samples(
         initial_training=config.training,

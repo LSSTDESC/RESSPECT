@@ -21,6 +21,9 @@ class LoopConfiguration(BaseConfiguration):
         if dict, keywords should be 'train' and 'test',
         and values must contain the path for separate train
         and test sample files.
+    features_query: dict
+        If a feature query is provided (in MongoDB query format), RESSPECT
+        will attempt to get the information from a provided MongoDB instance.
     output_metrics_file: str
         Full path to output file to store metric values of each loop.
     output_queried_file: str
@@ -95,9 +98,10 @@ class LoopConfiguration(BaseConfiguration):
     """
     nloops: int
     strategy: str
-    path_to_features: str
     output_metrics_file: str
     output_queried_file: str
+    path_to_features: str = None
+    features_query: dict = None
     features_method: str = 'Bazin'
     classifier: str = 'RandomForest'
     training: str = 'original'
@@ -122,16 +126,19 @@ class LoopConfiguration(BaseConfiguration):
 
     def __post_init__(self):
         # file checking
-        if isinstance(self.path_to_features, str):
-            if not path.isfile(self.path_to_features):
-                raise ValueError("`path_to_features` must be an existing file.")
-        elif isinstance(self.path_to_features, dict):
-            for key in self.path_to_features.keys():
-                if not path.isfile(self.path_to_features[key]):
-                    raise ValueError(f"path for '{key}' does not exist.")
+        if self.path_to_features is not None:
+            if isinstance(self.path_to_features, str):
+                if not path.isfile(self.path_to_features):
+                    raise ValueError("`path_to_features` must be an existing file.")
+            elif isinstance(self.path_to_features, dict):
+                for key in self.path_to_features.keys():
+                    if not path.isfile(self.path_to_features[key]):
+                        raise ValueError(f"path for '{key}' does not exist.")
+            else:
+                raise ValueError("`path_to_features` must be a str or dict.")
         else:
-            raise ValueError("`path_to_features` must be a str or dict.")
-
+            if self.features_query is None:
+                raise ValueError("Must provide either features file or MongoDB query.")
         if isinstance(self.pretrained_model_path, str):
             if not path.isfile(self.pretrained_model_path):
                 raise ValueError("`pretrained_model_path` must be an existing file.")

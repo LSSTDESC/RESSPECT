@@ -39,8 +39,9 @@ from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 from resspect.lightcurves_utils import make_features_header
 from resspect.tom_client import TomClient
+from resspect.fastdb_client import FASTDBClient
 
-__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit", "fit_parquet"]
+__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_fastdb_hot_transients", "fit", "fit_parquet"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -481,11 +482,11 @@ def fit(data_dic: dict, output_features_file: str,
                         light_curve_data, features_file)
     logging.info("Features have been saved to: %s", output_features_file)
 
-def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
+def request_fastdb_hot_transients(url: str = "https://fastdb-resspect-test.lbl.gov", username: str = None, 
                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 
                      detected_in_last_days: float = None, mjdnow: float = None, cheat_gentypes: list = None):
-    tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
-                    password = password)
+    #make sure you have this class set up
+    fastdb = FASTDBClient(url, username = username, password = password)
     dic = {}
     if detected_since_mjd is not None:
         dic['detected_since_mjd'] = detected_since_mjd
@@ -493,11 +494,28 @@ def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = No
         dic['detected_in_last_days'] = detected_in_last_days
     if mjdnow is not None:
         dic['mjd_now'] = mjdnow
-    if cheat_gentypes is not None:
-        dic['cheat_gentypes'] = cheat_gentypes
-    res = tom.post('elasticc2/gethottransients', json = dic)
-    data_dic = res.json()
+    #if cheat_gentypes is not None:
+        #dic['cheat_gentypes'] = cheat_gentypes
+    data_dic = fastdb.post('ltcv/gethottransients', json = dic)
     return data_dic
+
+# def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
+#                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 
+#                      detected_in_last_days: float = None, mjdnow: float = None, cheat_gentypes: list = None):
+#     tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
+#                     password = password)
+#     dic = {}
+#     if detected_since_mjd is not None:
+#         dic['detected_since_mjd'] = detected_since_mjd
+#     if detected_in_last_days is not None:
+#         dic['detected_in_last_days'] = detected_in_last_days
+#     if mjdnow is not None:
+#         dic['mjd_now'] = mjdnow
+#     if cheat_gentypes is not None:
+#         dic['cheat_gentypes'] = cheat_gentypes
+#     res = tom.post('elasticc2/gethottransients', json = dic)
+#     data_dic = res.json()
+#     return data_dic
 
 
 def main():

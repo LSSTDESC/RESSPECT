@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['time_domain_loop', 'load_dataset', 'submit_queries_to_TOM']
+__all__ = ['time_domain_loop', 'load_dataset', 'submit_queries_to_fastdb']
 
 import os
 from typing import Union, Tuple
@@ -24,7 +24,7 @@ import pandas as pd
 import progressbar
 
 from resspect import DataBase
-from resspect.tom_client import TomClient
+from resspect.fastdb_client import FASTDBClient
 
 
 def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
@@ -800,15 +800,12 @@ def process_next_day_loop(
     return light_curve_data
 
 
-def submit_queries_to_TOM(username, passwordfile, objectids: list, priorities: list, requester: str='resspect'):
-    tom = TomClient(url = "https://desc-tom-2.lbl.gov", username = username, passwordfile = passwordfile)
+def submit_queries_to_fastdb(username, password, objectids: list, priorities: list, requester: str='resspect'):
+    tom = FASTDBClient(url = "fastdb-resspect-test.lbl.gov", username = username, password = password)
     req = { 'requester': requester,
             'objectids': objectids,
             'priorities': priorities}
-    res = tom.request( 'POST', 'elasticc2/askforspectrum', json=req )
-    dic = res.json()
-    if res.status_code != 200:
-        raise ValueError('Request failed, ' + res.text + ". Status code: " + str(res.status_code))
+    dic = tom.request( 'POST', 'spectrum/askforspectrum', json=req )
     
     if dic['status'] == 'error':
         raise ValueError('Request failed, ' + dic.json()['error'])

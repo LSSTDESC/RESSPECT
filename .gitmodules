@@ -1,0 +1,3 @@
+[submodule "external/FASTDB"]
+	path = external/FASTDB
+	url = https://github.com/LSSTDESC/FASTDB.git

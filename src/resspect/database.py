@@ -27,7 +27,7 @@ from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
-from resspect.plugin_utils import fetch_classifier_class
+
 
 __all__ = ['DataBase']
 
@@ -690,12 +690,12 @@ class DataBase:
                                     'and pool samples!')
 
         # check if there are repeated ids within each sample
-        names = ['train', 'pool', 'validation', 'test']
-        pds = [self.train_metadata, self.pool_metadata,
+        names = ['pool', 'validation', 'test']
+        pds = [self.pool_metadata,
                self.validation_metadata, self.test_metadata]
 
         repeated_ids_samples = []
-        for i in range(4):
+        for i in range(3):
             if pds[i].shape[0] > 0:
                 delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
                 if abs(delta) > 0:
@@ -946,19 +946,43 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        clf_class = fetch_classifier_class(method)
-        if clf_class is None:
-            raise ValueError(f'Classifier, {method} not recognized!')
-
-        clf_instance = clf_class(**kwargs)
-
-        # Fit the classifier and predict with it
-        clf_instance.fit(self.train_features, self.train_labels)
-        self.classprob = clf_instance.predict_probabilities(self.pool_features)
+        if method == 'RandomForest':
+            self.predicted_class,  self.classprob, self.classifier = \
+                   random_forest(self.train_features, self.train_labels,
+                                 self.pool_features, **kwargs)
+        elif method == 'GradientBoostedTrees':
+            raise ValueError("GradientBoostedTrees is currently unimplemented.")
+            # TODO: Restore once GradientBoostedTrees is fixed.
+            # self.predicted_class,  self.classprob, self.classifier = \
+            #     gradient_boosted_trees(self.train_features, self.train_labels,
+            #                            self.pool_features, **kwargs)
+        elif method == 'KNN':
+            self.predicted_class,  self.classprob, self.classifier = \
+                knn(self.train_features, self.train_labels,
+                               self.pool_features, **kwargs)
+        elif method == 'MLP':
+            self.predicted_class,  self.classprob, self.classifier = \
+                mlp(self.train_features, self.train_labels,
+                               self.pool_features, **kwargs)
+        elif method == 'SVM':
+            self.predicted_class, self.classprob, self.classifier = \
+                svm(self.train_features, self.train_labels,
+                               self.pool_features, **kwargs)
+        elif method == 'NB':
+            self.predicted_class, self.classprob, self.classifier = \
+                nbg(self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        else:
+            raise ValueError(
+                "The only classifiers implemented are 'RandomForest', 'KNN', 'MLP', "
+                "'SVM' and 'NB'.\nFeel free to add other options."
+            )
 
         # estimate classification for validation sample
-        self.validation_class = clf_instance.predict_class(self.validation_features)
-        self.validation_prob = clf_instance.predict_probabilities(self.validation_features)
+        self.validation_class = \
+            self.classifier.predict(self.validation_features)
+        self.validation_prob = \
+            self.classifier.predict_proba(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1004,24 +1028,46 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        clf_class = fetch_classifier_class(method)
-        if clf_class is None:
-            raise ValueError(f'Classifier, {method} not recognized!')
+        if method == 'RandomForest':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(random_forest, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
 
-        # Fit an ensemble of classifiers and predict with all of them
-        self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(
-                clf_class,
-                n_ensembles,
-                self.train_features,
-                self.train_labels,
-                self.pool_features
-            )
+        elif method == 'GradientBoostedTrees':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(gradient_boosted_trees, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        elif method == 'KNN':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(knn, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        elif method == 'MLP':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(mlp, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        elif method == 'SVM':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(svm, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        elif method == 'NB':
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(nbg, n_ensembles,
+                          self.train_features, self.train_labels,
+                          self.pool_features, **kwargs)
+        else:
+            raise ValueError('Classifier not recognized!')
 
         self.validation_class = \
             self.classifier.predict(self.validation_features)
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
+
+        
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1550,8 +1596,7 @@ class DataBase:
     def save_metrics(self, loop: int, output_metrics_file: str, epoch: int, batch=1):
         """Save current metrics to file.
 
-        If loop == 0 the 'output_metrics_file' will be created or overwritten.
-        Otherwise results will be added to an existing 'output_metrics file'.
+       
 
         Parameters
         ----------
@@ -1566,7 +1611,7 @@ class DataBase:
         """
 
         # add header to metrics file
-        if not os.path.exists(output_metrics_file) or loop == 0:
+        if not os.path.exists(output_metrics_file):
             with open(output_metrics_file, 'w') as metrics:
                 metrics.write('loop,')
                 for name in self.metrics_list_names:

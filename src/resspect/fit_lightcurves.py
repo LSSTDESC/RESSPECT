@@ -40,7 +40,7 @@ from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 from resspect.lightcurves_utils import make_features_header
 from resspect.tom_client import TomClient
 
-__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit"]
+__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit", "fit_parquet"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -301,6 +301,77 @@ def fit_TOM(data_dic: dict, output_features_file: str,
             if 'None' not in light_curve_data.features:
                 write_features_to_output_file(
                     light_curve_data, TOM_features_file)
+    logging.info("Features have been saved to: %s", output_features_file)
+
+def _parquet_sample_fit(
+        obj_dic: dict, feature_extractor: str):
+    """
+    Reads parquet file and performs fit.
+    
+    Parameters
+    ----------
+    id
+        SNID
+    feature_extractor
+        Function used for feature extraction.
+        Options are 'bazin', 'bump', or 'malanchev'.
+    """
+    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    wanted_keys = ["MJD","BAND","FLUXCAL","FLUXCALERR"]
+    photometry = {key: obj_dic[key] for key in wanted_keys}
+    photometry = pd.DataFrame(photometry)
+    photometry = photometry.rename(columns={
+    "MJD": "mjd",
+    "BAND": "band",
+    "FLUXCAL": "flux",
+    "FLUXCALERR": "fluxerr"})
+    light_curve_data.photometry = photometry
+
+    light_curve_data.dataset_name = 'parquet'
+    light_curve_data.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+    light_curve_data.id = obj_dic['SNID']
+    light_curve_data.redshift = obj_dic['REDSHIFT_FINAL']
+    light_curve_data.sntype = obj_dic['REDSHIFT_FINAL']
+    light_curve_data.sncode = obj_dic['SNTYPE']
+    light_curve_data.sample = 'N/A'
+
+    light_curve_data.fit_all()
+    
+    return light_curve_data
+
+def fit_parquet(data_dic: dict, output_features_file: str,
+            number_of_processors: int = 1,
+            feature_extractor: str = 'bazin'):
+    """
+    Perform fit to all objects from the parquet data.
+
+     Parameters
+     ----------
+     data_dic: str
+         Dictionary containing the photometry for all light curves.
+     output_features_file: str
+         Path to output file where results should be stored.
+     number_of_processors: int, default 1
+        Number of cpu processes to use.
+     feature_extractor: str, default bazin
+        Function used for feature extraction.
+    """
+    if feature_extractor == 'bazin':
+        header = TOM_FEATURES_HEADER
+    elif feature_extractor == 'malanchev':
+        header = TOM_MALANCHEV_FEATURES_HEADER
+
+    multi_process = multiprocessing.Pool(number_of_processors)
+    logging.info("Starting parquet " + feature_extractor + " fit...")
+    with open(output_features_file, 'w') as parquet_features_file:
+        parquet_features_file.write(','.join(header) + '\n')
+        
+        for light_curve_data in multi_process.starmap(
+                _parquet_sample_fit, zip(
+                    data_dic, repeat(feature_extractor))):
+            if 'None' not in light_curve_data.features:
+                write_features_to_output_file(
+                    light_curve_data, parquet_features_file)
     logging.info("Features have been saved to: %s", output_features_file)
 
 def _sample_fit(

@@ -351,6 +351,10 @@ def fit(
             'dec'
     """
 
+    # add an error message to make sure that parquet format is not on when using random forest classifier
+    if (feature_extractor == 'Malanchev' or feature_extractor == 'Bazin') and save_format == 'parquet':
+        raise ValueError("Cannot use .parquet file format with random forest classifier!")
+
     # if `filters` is a key in FILTER_SETS, then use the corresponding value
     # otherwise, assume `filters` is a list of filter strings like `['g', 'r']`.
     if isinstance(filters, str) and filters in FILTER_SETS:

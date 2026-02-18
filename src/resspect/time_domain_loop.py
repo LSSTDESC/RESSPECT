@@ -709,8 +709,8 @@ def process_next_day_loop(
     return light_curve_data
 
 
-def submit_queries_to_TOM(username, passwordfile, objectids: list, priorities: list, requester: str='resspect'):
-    tom = TomClient(url = "https://desc-tom-2.lbl.gov", username = username, passwordfile = passwordfile)
+def submit_queries_to_TOM(url, username, passwordfile, objectids: list, priorities: list, requester: str='resspect'):
+    tom = TomClient(url = url, username = username, passwordfile = passwordfile)
     req = { 'requester': requester,
             'objectids': objectids,
             'priorities': priorities}

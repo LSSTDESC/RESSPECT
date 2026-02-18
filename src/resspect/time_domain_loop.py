@@ -173,7 +173,7 @@ def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
     """
     id_key_name = first_loop_data.identify_keywords()
     label_key_name = first_loop_data.identfy_labels()
-    repeated_id_flags = np.in1d(
+    repeated_id_flags = np.isin(
         first_loop_data.pool_metadata[id_key_name].values,
         light_curve_data.train_metadata[id_key_name].values)
     first_loop_data.pool_metadata = first_loop_data.pool_metadata[

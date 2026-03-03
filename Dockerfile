@@ -36,6 +36,7 @@ ENV PATH=${RESSPECT_VENV_BIN}:$PATH
 # Activate the venv every time we log in.
 RUN touch /root/.bashrc && echo "source ${RESSPECT_VENV_BIN}/activate" >> /root/.bashrc
 
+
 # Install RESSPECT and its dependencies within the virtual env.
 #
 # We inject a pretend version number via `git rev-parse HEAD` so that pip can find a version number for 
@@ -62,10 +63,20 @@ RUN touch /root/.bashrc && echo "source ${RESSPECT_VENV_BIN}/activate" >> /root/
 RUN bash -c "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_RESSPECT=0+$(cd ${RESSPECT_SRC} && git rev-parse HEAD) \
              pip install ${RESSPECT_SRC}"
 
-# Create a sample work dir for resspect
-RUN mkdir -p ${RESSPECT_WORK}/results
-RUN mkdir -p ${RESSPECT_WORK}/plots
-RUN cp -r ${RESSPECT_SRC}/data ${RESSPECT_WORK}
+# Create a file with password for the test TOM
+RUN touch /resspect/passwordfile.txt && echo "testing" > /resspect/passwordfile.txt
 
-EXPOSE 8081
+# Create a sample work dir mount point
+RUN mkdir -p ${RESSPECT_WORK}
+
+# We require a results directory, RESSPECT doesn't reliably create one before writing into it.
+# Note that in the compose environment ${RESSPECT_WORK} is bind-mounted, so see the git location
+# of that bind mount (example_work_dir) for the template.
+RUN mkdir -p ${RESSPECT_WORK}/results
+
+# Ensure commands run in the container by default have a cwd of the RESSPECT_WORK dir.
+RUN echo "cd ${RESSPECT_WORK}" >> /root/.bashrc
+
+WORKDIR ${RESSPECT_WORK}
+
 ENTRYPOINT ["bash"]

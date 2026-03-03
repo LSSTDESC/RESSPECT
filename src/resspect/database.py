@@ -518,19 +518,19 @@ class DataBase:
             # get samples labels in a separate object
             if self.train_metadata.shape[0] > 0:
                 train_labels = self.train_metadata[label_column].isin(non_anomaly_classes)
-                self.train_labels = train_labels.astype(int)
+                self.train_labels = train_labels.to_numpy(dtype=int)
 
             if self.test_metadata.shape[0] > 0:
                 test_labels = self.test_metadata[label_column].isin(non_anomaly_classes)
-                self.test_labels = test_labels.astype(int)
+                self.test_labels = test_labels.to_numpy(dtype=int)
 
             if self.validation_metadata.shape[0] > 0:
                 validation_labels = self.validation_metadata[label_column].isin(non_anomaly_classes)
-                self.validation_labels = validation_labels.astype(int)
+                self.validation_labels = validation_labels.to_numpy(dtype=int)
 
             if self.pool_metadata.shape[0] > 0:
                 pool_labels = self.pool_metadata[label_column].isin(non_anomaly_classes)
-                self.pool_labels = pool_labels.astype(int)
+                self.pool_labels = pool_labels.to_numpy(dtype=int)
 
             # identify asked to consider queryable flag
             if queryable and len(self.pool_metadata) > 0:
@@ -1459,7 +1459,7 @@ class DataBase:
 
         # add header to metrics file
         if not os.path.exists(output_metrics_file) or loop == 0:
-            with open(output_metrics_file, 'w') as metrics:
+            with open(output_metrics_file, 'w+') as metrics:
                 metrics.write('loop,')
                 for name in self.metrics_list_names:
                     metrics.write(name + ',')
@@ -1473,7 +1473,7 @@ class DataBase:
             flag = queried_sample[:,0].astype(int) == epoch
 
             if sum(flag) > 0:
-                with open(output_metrics_file, 'a') as metrics:
+                with open(output_metrics_file, 'a+') as metrics:
                     metrics.write(str(epoch) + ',')
                     for value in self.metrics_list_values:
                         metrics.write(str(value) + ',')
@@ -1512,14 +1512,14 @@ class DataBase:
                 if not os.path.exists(queried_sample_file) or loop == 0:
                     # add header to query sample file
                     full_header = self.metadata_names + self.features_names
-                    with open(queried_sample_file, 'w') as query:
+                    with open(queried_sample_file, 'w+') as query:
                         query.write('day,')
                         for item in full_header:
                             query.write(item + ',')
                         query.write('\n')
 
                 # save query sample to file
-                with open(queried_sample_file, 'a') as query:
+                with open(queried_sample_file, 'a+') as query:
                     for batch in range(batch):
                         for elem in queried_sample[flag][batch]:
                             query.write(str(elem) + ',')
